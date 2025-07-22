@@ -1,0 +1,39 @@
+##### datetime package: record the time it takes to run the whole notebook #####
+from datetime import datetime
+import os
+start = datetime.now()
+
+##### save the bucket path as a variable to read and save files #####
+bucket = os.getenv('WORKSPACE_BUCKET')
+bucket
+
+##### save genomic data bucket location #####
+genomic_location = oc.getenv("CDR_STORAGE_PATH")
+genomic_location
+
+##### import Hail and initialize Spark #####
+import hail as hl
+hl.default_reference(new_default_reference = "GRCh38")
+
+##### Array Hail MatrixTable #####
+mt_array_path = os.getenv("MICROARRAY_HAIL_STORAGE_PATH")
+mt_array_path
+
+mt_array_path = "gs://fc-aou-datasets-controlled/v8/microarray/hail.mt"
+mt_array = hl.read_matrix_table(mt_array_path)
+
+mt_array.count()
+mt_array.describe()
+
+##### Array PLINK BED files from Hail MatrixTable #####
+array_plink_path = f'{genomic_location}/microarray/plink'
+array_plink_path
+
+array_plink_path = 'gs://fc-aou-datasets-controlled/v8/microarray/plink'
+
+# .bim files
+array_bin_path = f'{array_plink_path}/*.bim'
+array_bim_path #chromosome, variant identifier, position in morgans or centimorgans, base-pair coordinate, alternative allele, reference allele
+
+!gsutil -u $$GOOGLE_PROJECT cat $array_bim_path | head -n 3
+
