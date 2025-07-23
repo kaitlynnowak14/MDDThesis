@@ -49,15 +49,3 @@ array_bed_path
     #PLINK cannot read files from the Google Bucket, so need to copy the PLINK BED files into the current environment (make sure have enough space)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
