@@ -1,0 +1,23 @@
+##### Copy Array Data to Current Environment #####
+import os
+
+bucket = os.getenv('WORKSPACE_BUCKET')
+genomic_location = os.getenv("CDR_STORAGE_PATH")
+
+# Define PLINK file path
+array_plink_prefix = f'{genomic_location}/microarray/plink/plink'
+
+# Local destination
+local_dir = '/home/jupyter/plink_array_data/'
+os.makedirs(local_dir, exist_ok=True)
+
+# Copy 3 PLINK files
+!gsutil cp {array_plink_prefix}.bed {local_dir}
+!gsutil cp {array_plink_prefix}.bim {local_dir}
+!gsutil cp {array_plink_prefix}.fam {local_dir}
+
+##### After running, local directory will contain:
+# /home/jupyter/plink_array_data/plink.bed  
+# /home/jupyter/plink_array_data/plink.bim  
+# /home/jupyter/plink_array_data/plink.fam  
+    # can now be used in PLINK like: plink --bfile /home/jupyter/plink_array_data/plink --make-bed --out my_filtered_data
