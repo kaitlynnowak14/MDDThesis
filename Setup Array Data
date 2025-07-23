@@ -31,9 +31,33 @@ array_plink_path
 
 array_plink_path = 'gs://fc-aou-datasets-controlled/v8/microarray/plink'
 
-# .bim files
+#.bim files: contains information on genetic markers
 array_bin_path = f'{array_plink_path}/*.bim'
 array_bim_path #chromosome, variant identifier, position in morgans or centimorgans, base-pair coordinate, alternative allele, reference allele
 
 !gsutil -u $$GOOGLE_PROJECT cat $array_bim_path | head -n 3
+
+#.fam files: contains information on individuals
+array_fam_path = f'{array_plink_path}/*.fam'
+array_fam_path #family_id, person_id, father_id, mother_id, sex code('1' = male, '2' = female), phenotype value ('1' = control, '2' = case, else = missing)
+
+!gsutil -u $$GOOGLE_PROJECT cat $array_fam_path | head -n 3
+
+#.bed files: contains individual identifies and genotypes
+array_bed_path = f'{array_plink_path}/*.bed'
+array_bed_path
+    #PLINK cannot read files from the Google Bucket, so need to copy the PLINK BED files into the current environment (make sure have enough space)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
