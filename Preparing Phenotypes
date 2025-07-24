@@ -1,0 +1,17 @@
+##### Import packages and environment variables #####
+import os
+import pandas as pd
+from datetime import datetime
+
+start = datetime.now()
+start
+
+bucket = os.getenv("WORKSPACE_BUCKET")
+bucket
+
+dataset = as.getenv("WORKSPACE_CDR")
+dataset
+
+##### Select condition codes for MDD #####
+condition_codes_MDD_icd9 = tuple([ ])
+condition_codes_MDD_icd10 = tuple([ ])
