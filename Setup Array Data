@@ -1,51 +1,38 @@
-##### datetime package: record the time it takes to run the whole notebook #####
+##### Load Hail MatrixTable and FIlter to European Ancestry Cohort #####
+# Import libraries
 from datetime import datetime
 import os
+import hail as hl
+
+# Start timer
 start = datetime.now()
 
-##### save the bucket path as a variable to read and save files #####
+# Set environment variables
 bucket = os.getenv('WORKSPACE_BUCKET')
-bucket
+genomic_location = os.getenv("CDR_STORAGE_PATH")
 
-##### save genomic data bucket location #####
-genomic_location = oc.getenv("CDR_STORAGE_PATH")
-genomic_location
-
-##### import Hail and initialize Spark #####
-import hail as hl
+# Initialize Hail with GRCh38
 hl.default_reference(new_default_reference = "GRCh38")
 
-##### Array Hail MatrixTable #####
+##### Load Array Hail MatrixTable #####
 mt_array_path = os.getenv("MICROARRAY_HAIL_STORAGE_PATH")
-mt_array_path
-
 mt_array_path = "gs://fc-aou-datasets-controlled/v8/microarray/hail.mt"
 mt_array = hl.read_matrix_table(mt_array_path)
 
+# Inspect data
 mt_array.count()
 mt_array.describe()
 
-##### Array PLINK BED files from Hail MatrixTable #####
-array_plink_path = f'{genomic_location}/microarray/plink'
-array_plink_path
+##### Filter to European Ancestry Cohort #####
+# Replace bath below with actual cohort CSV when ready
+cohort_ids = hl.import_table('gs://your_bucket/path/to/cohort_ids.csv', key = 'person_id')
 
-array_plink_path = 'gs://fc-aou-datasets-controlled/v8/microarray/plink'
+# Filter MatrixTable to only samples in cohort
+mt_array = mt_array.filter_cols(hl.literal(cohort_ids['person_id']).contains(mt_array.s))
 
-#.bim files: contains information on genetic markers
-array_bin_path = f'{array_plink_path}/*.bim'
-array_bim_path #chromosome, variant identifier, position in morgans or centimorgans, base-pair coordinate, alternative allele, reference allele
+##### Export Filtered MatrixTabl to PLINK Format #####
+# Define output path in workspace bucket
+plink_output_prefix = f'{bucket}/prs_plink/filtered_cohort'
 
-!gsutil -u $$GOOGLE_PROJECT cat $array_bim_path | head -n 3
-
-#.fam files: contains information on individuals
-array_fam_path = f'{array_plink_path}/*.fam'
-array_fam_path #family_id, person_id, father_id, mother_id, sex code('1' = male, '2' = female), phenotype value ('1' = control, '2' = case, else = missing)
-
-!gsutil -u $$GOOGLE_PROJECT cat $array_fam_path | head -n 3
-
-#.bed files: contains individual identifies and genotypes
-array_bed_path = f'{array_plink_path}/*.bed'
-array_bed_path
-    #PLINK cannot read files from the Google Bucket, so need to copy the PLINK BED files into the current environment (make sure have enough space)
-
-
+# Export to PLINK for PRS calcuation in PLINK
+hl.export_plink(mt_array, output = plink_output_prefix)
