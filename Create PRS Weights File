@@ -1,3 +1,5 @@
+##In R##
+
 ##### Create Weight Files #####
 # Load top 10k SNPs file
 top10k_SNPs <- read.table('~/Downloads/pgc-mdd2025_top10k_eur_v3-49-24-11.tsv',
