@@ -1,0 +1,4 @@
+##### Upload Weights File to Cloud #####
+# In terminal (adjust path and bucket)
+gsutil cp ~/Downloads/mdd2025_prs_weights.txt gs://your-bucket/weights/mdd2025_prs_weights.txt
+
