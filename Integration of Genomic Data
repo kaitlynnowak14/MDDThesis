@@ -1,3 +1,5 @@
+## In Hail ##
+
 ##### Export Person IDs from merged_df #####
 # Export person_id column to CSV for Hail filtering
 merged_df[['person_id']].to_csv('cohort_ids.csv', index=False)
