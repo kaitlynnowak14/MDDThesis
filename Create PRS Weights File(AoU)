@@ -1,0 +1,72 @@
+## In R on local computer##
+
+##### Install packages if needed #####
+if (!require("BiocManager")) install.packages("BiocManager")
+BiocManager::install(c("rtracklayer", "GenomicRanges"), ask = FALSE)
+
+library(rtracklayer)
+library(GenomicRanges)
+
+##### Load top 10k SNPs file #####
+top10k_SNPs <- read.table('~/Downloads/pgc-mdd2025_top10k_eur_v3-49-24-11.tsv',
+                          sep = '\t', header = FALSE)
+
+# Assign column names
+colnames(top10k_SNPs) <- c("CHROM", "POS", "ID", "EA", "NEA", "BETA", "SE", "PVAL", 
+                           "FCAS","FCON", "IMPINFO", "NEFF", "NCAS", "NCON",
+                           "HETI", "HETDF", "HETPVAL")
+
+##### Liftover GRCh37 -> GRCh38 (hg19 -> hg38) #####
+# Create GRanges
+gr <- GRanges(seqnames = paste0("chr", top10k_SNPs$CHROM),
+              ranges = IRanges(start = top10k_SNPs$POS, end = top10k_SNPs$POS),
+              strand = "*",
+              ID = top10k_SNPs$ID,
+              EA = top10k_SNPs$EA,
+              BETA = top10k_SNPs$BETA)
+
+# Import chain file (download from UCSC)
+chain <- import.chain("~/Downloads/hg19ToHg38.over.chain")
+
+# Perform liftover
+lifted <- liftOver(gr, chain)
+lifted <- unlist(lifted) #flatten
+
+# SNPs failed liftover
+failed_count <- length(gr) - length(lifted)
+message(failed_count, " SNPs failed liftover and were removed.")
+
+# Remove SNPs that failed to lift
+mapped_ids <- lifted$ID
+top10k_lifted <- top10k_SNPs[top10k_SNPs$ID %in% mapped_ids, ]
+
+# Update positions to hg38
+top10k_lifted$CHROM <- gsub("chr", "", as.character(seqnames(lifted)))
+top10k_lifted$POS <- start(lifted)
+
+##### Remove duplicate SNP IDs #####
+dup_ids <- top10k_lifted$ID[duplicated(top10k_lifted$ID)]
+dup_count <- length(dup_ids)
+if (dup_count > 0) {
+  message(dup_count, " duplicate SNP IDs found. Removing duplicates...")
+  top10k_lifted <- top10k_lifted[!duplicated(top10k_lifted$ID), ]
+} else {
+  message("No duplicate SNP IDs found.")
+}
+
+##### Prepare PLINK weights file #####
+# Only need ID, EA, and BETA for PLINK
+prs_weights <- top10k_lifted[, c("ID", "EA", "BETA")]
+
+# Rename EA to A1 for PLINK
+colnames(prs_weights) <- c("SNP", "A1", "BETA")
+
+##### Save outputs #####
+# Save as tab-delimited text file with no quotes or row names
+write.table(prs_weights, file = "~/Downloads/top10k_prs_weights_hg38.txt",
+            sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+
+# Save full lifted file
+write.table(top10k_lifted,
+            file = "~/Downloads/top10k_full_lifted_hg38.txt",
+            sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
