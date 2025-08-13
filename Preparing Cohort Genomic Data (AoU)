@@ -1,0 +1,59 @@
+## In Hail on AoU Cloud Environment##
+
+##### Import Libraries #####
+from datetime import datetime
+import os
+import hail as hl
+
+# Start timer
+start = datetime.now()
+
+##### Set Environment #####
+bucket = os.getenv('WORKSPACE_BUCKET')  # Workspace bucket
+genomic_location = os.getenv("CDR_STORAGE_PATH")  # Genomic data bucket
+
+# Initialize Hail with GRCh38 reference
+hl.init(default_reference='GRCh38')
+
+##### Export Cohort Person IDs #####
+# Save person_id column from merged_df to CSV
+merged_df[['person_id']].to_csv('cohort_ids.csv', index=False)
+
+# Upload CSV to Cloud Storage
+!gsutil cp cohort_ids.csv {bucket}/cohort_ids.csv
+
+##### Load Array Hail MatrixTable #####
+mt_array_path = f"{genomic_location}/microarray/hail.mt"
+mt_array = hl.read_matrix_table(mt_array_path)
+
+# Inspect MatrixTable
+mt_array.describe()
+print("Original MatrixTable dimensions (rows, cols):", mt_array.count())
+
+##### Filter to Cohort #####
+# Import cohort IDs as Hail Table
+cohort_csv_path = f'{bucket}/cohort_ids.csv'
+cohort_table = hl.import_table(cohort_csv_path, key='person_id')
+
+# Filter MatrixTable to include only cohort samples
+mt_array_filtered = mt_array.filter_cols(hl.is_defined(cohort_table[mt_array.s]))
+
+# Optional: Confirm filtering
+print("Filtered MatrixTable dimensions (rows, cols):", mt_array_filtered.count())
+
+##### Rename Alleles for PLINK Compatibility #####
+mt_array_filtered = mt_array_filtered.annotate_rows(
+    A1 = mt_array_filtered.alleles[0],  # Effect allele (EA)
+    A2 = mt_array_filtered.alleles[1]   # Non-effect allele (NEA)
+)
+
+##### Save Filtered MatrixTable #####
+filtered_mt_path = f'{bucket}/filtered_mt/filtered_cohort.mt'
+mt_array_filtered.write(filtered_mt_path, overwrite=True)
+
+##### Export Filtered MatrixTable to PLINK #####
+plink_output_prefix = f'{bucket}/prs_plink/filtered_cohort'
+hl.export_plink(mt_array_filtered, output=plink_output_prefix)
+
+##### Print Elapsed Time #####
+print("Workflow completed in:", datetime.now() - start)
