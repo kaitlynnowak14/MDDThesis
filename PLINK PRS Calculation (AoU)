@@ -1,0 +1,91 @@
+## In Cloud Environment ##
+
+##### Upload Weights File to Cloud #####
+# In terminal (adjust path and bucket)
+gsutil cp ~/Downloads/top10k_prs_weights.txt gs://YOUR_WORKSPACE_BUCKET/top10k_prs_weights.txt
+
+# Verify upload
+gsutil ls gs://YOUR_WORKSPACE_BUCKET/top10k_prs_weights.txt
+
+## In PLINK ##
+
+##### Align SNPs and Alleles #####
+# Align Cohort SNPs to PRS SNPs using the effect allele (A1)
+plink \
+  --bfile /path/to/filtered_cohort \
+  --a1-allele gs://YOUR_WORKSPACE_BUCKET/top10k_prs_weights.txt cols=1,2 \
+  --make-bed \
+  --out aligned_cohort
+
+##### Drop Ambiguous Strand SNPs #####
+# Ambiguous SNPs with MAF ~0.5 can't be reliably aligned
+# Generate list of ambiguous SNPs
+plink \
+  --bfile aligned_cohort \
+  --list-ambiguous-snps \
+  --out ambiguous_snps
+
+# Exclude ambiguous SNPs
+plink \
+  --bfile aligned_cohort \
+  --exclude ambiguous_snps.snplist \
+  --make-bed \
+  --out cohort_noambig
+
+##### Remove Related Individuals #####
+# Use AoU provided file or PLINK --rel-cutoff, keeps 1 individual per pair of 2nd-degree relatives
+plink \
+  --bfile cohort_noambig \
+  --rel-cutoff 0.125 \
+  --make-bed \
+  --out cohort_final
+
+##### Calculate PRS #####
+# 1 2 3 = columns in weights file: SNP, A1, BETA
+# Outputs prs_scores.profile with PRS per individual
+plink \
+  --bfile /path/to/cohort_final \
+  --score gs://YOUR_WORKSPACE_BUCKET/top10k_prs_weights.txt 1 2 3 sum \
+  --out prs_scores
+
+## In hail ##
+
+##### Inspect PRS Distribution #####
+# Initialize Hail
+import hail as hl
+hl.init()
+
+# Load .profile file into Hail, standardize PRS for downstream analysis
+prs_table = hl.import_table('prs_scores.profile', impute=True)
+prs_table = prs_table.annotate(prs_std = (prs_table.SCORE - hl.mean(prs_table.SCORE)) / hl.stdev(prs_table.SCORE))
+
+# Summary of prs upload
+prs_table.describe()
+
+# Plot histogram to check for outliers or unusual distributions
+import matplotlib.pyplot as plt
+prs_vals = prs_table.aggregate(hl.agg.collect(prs_table.prs_std))
+plt.hist(prs_vals, bins=50)
+plt.xlabel('Standardized PRS')
+plt.ylabel('Number of Individuals')
+plt.title('PRS Distribution')
+plt.show()
+
+# Basic statistics of PRS
+mean_prs = prs_table.aggregate(hl.agg.mean(prs_table.prs_std))
+sd_prs = prs_table.aggregate(hl.agg.stats(prs_table.prs_std).stdev)
+print(f"PRS mean: {mean_prs}, SD: {sd_prs}")
+
+##### Merge PRS with phenotype/covariates in Hail #####
+# Each participant row has PRS + phenotype + covariates ready for analysis
+# Rename IID to person_id for merging
+prs_table = prs_table.rename({'IID': 'person_id'})
+
+# Load phenotype/covariate table
+phenotype_table = hl.read_table('/path/to/phenotype_covariates.ht')
+
+# Merge on participant ID (verify column names: IID/FID in PRS table)
+merged = phenotype_table.join(prs_table, how='left')
+
+# Verify merged table
+merged.describe()
