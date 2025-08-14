@@ -1,12 +1,15 @@
 ## In Hail ##
 
+import hail as hl
 import pandas as pd
 import os
 
+hail.init()
+
 ##### Load DataFrames from Provided All of Us Queries #####
-person_df = dataset_65324705_person_df
-condition_df = dataset_65324705_condition_df
-survey_df = dataset_65324705_survey_df
+person_df = dataset_29072358_person_df
+survey_df = dataset_29072358_survey_df
+condition_df = dataset_29072358_condition_df
 
 ##### Step 1: Summarize Condition Data - First MDD Diagnosis per Person #####
 # Convert condition date column to datetime
