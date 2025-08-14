@@ -1,4 +1,4 @@
-## In Python Jupyer Notebook(Pandas) ##
+## In Python Jupyer Notebook(Pandas & Hail) ##
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -62,3 +62,8 @@ plt.show()
 age_log_skew = skew(merged_df['age_of_onset_log'])
 print(f"Skewness of log-transformed age_of_onset: {age_log_skew:.3f}")
 
+##### Convert Pandas DataFrame to Hail Table #####
+ht_pheno = hl.Table.from_pandas(merged_df, key='person_id')
+
+# Annotate Hail MatrixTable
+mt = mt.annotate_cols(**ht_pheno[mt.s])
