@@ -75,17 +75,3 @@ plt.show()
 mean_prs = prs_table.aggregate(hl.agg.mean(prs_table.prs_std))
 sd_prs = prs_table.aggregate(hl.agg.stats(prs_table.prs_std).stdev)
 print(f"PRS mean: {mean_prs}, SD: {sd_prs}")
-
-##### Merge PRS with phenotype/covariates in Hail #####
-# Each participant row has PRS + phenotype + covariates ready for analysis
-# Rename IID to person_id for merging
-prs_table = prs_table.rename({'IID': 'person_id'})
-
-# Load phenotype/covariate table
-phenotype_table = hl.read_table('/path/to/phenotype_covariates.ht')
-
-# Merge on participant ID (verify column names: IID/FID in PRS table)
-merged = phenotype_table.join(prs_table, how='left')
-
-# Verify merged table
-merged.describe()
