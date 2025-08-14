@@ -1,4 +1,4 @@
-## In Python (Jupyter Notebook) ##
+## In Python Jupyer Notebook(Pandas) ##
 
 import numpy as np
 import matplotlib.pyplot as plt
