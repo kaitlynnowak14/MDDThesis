@@ -1,0 +1,107 @@
+## In Hail ##
+
+##### Compute PCA on cohort_final genotypes #####
+import hail as hl
+import matplotlib.pyplot as plt
+
+# Initialize Hail
+hl.init()
+
+##### Load cohort_final PLINK data #####
+mt = hl.import_plink(
+    bfile='/path/to/cohort_final',
+    reference_genome='GRCh38')
+
+# Filter to autosomal, common, biallelic SNPs
+mt = mt.filter_rows(hl.is_autosomal(mt.locus) & (hl.len(mt.alleles) == 2))
+mt = hl.variant_qc(mt)
+mt = mt.filter_rows(mt.variant_qc.AF[1] > 0.01)
+
+# LD pruning
+pruned_ht = hl.ld_prune(mt.GT, r2=0.1, bp_window_size=250000)
+mt_pruned = mt.filter_rows(hl.is_defined(pruned_ht[mt.row_key]))
+
+##### Compute Top 16 PCs #####
+eigenvalues, scores, loadings = hl.hwe_normalized_pca(mt_pruned.GT, k=16)
+
+# Rename sample ID column to match other tables
+scores = scores.rename({'s': 'IID'})
+
+##### Load and Standardize PRS #####
+prs_table = hl.import_table('prs_scores.profile', impute=True)
+
+# Ensure SCORE is numeric
+prs_table = prs_table.annotate(SCORE = hl.float64(prs_table.SCORE))
+
+# Rename IID column
+prs_table = prs_table.rename({'#IID': 'IID'})
+
+# Standardize PRS
+mean_score = prs_table.aggregate(hl.agg.mean(prs_table.SCORE))
+sd_score = prs_table.aggregate(hl.agg.stats(prs_table.SCORE).stdev)
+prs_table = prs_table.annotate(prs_std = (prs_table.SCORE - mean_score) / sd_score)
+
+##### Merge PRS with PCA #####
+prs_table = prs_table.key_by('IID')
+scores = scores.key_by('IID')
+prs_pca_table = prs_table.join(scores, how='inner')
+
+##### Visualize PCs to inspect ancestry clusters #####
+pc_vals = prs_pca_table.aggregate(hl.agg.collect((prs_pca_table.PC1, prs_pca_table.PC2)))
+pc1_vals = [x[0] for x in pc_vals]
+pc2_vals = [x[1] for x in pc_vals]
+
+plt.figure(figsize=(8,6))
+plt.scatter(pc1_vals, pc2_vals, alpha=0.6, s=20)
+plt.xlabel('PC1')
+plt.ylabel('PC2')
+plt.title('PCA Scatterplot of Cohort')
+plt.show()
+
+##### Remove ancestry outliers #####
+# PCs 1–4: strict (6 SD)
+for pc in ['PC1','PC2','PC3','PC4']:
+    stats = prs_pca_table.aggregate(hl.agg.stats(prs_pca_table[pc]))
+    prs_pca_table = prs_pca_table.filter(
+        (prs_pca_table[pc] >= stats.mean - 6*stats.stdev) &
+        (prs_pca_table[pc] <= stats.mean + 6*stats.stdev))
+
+# PCs 5–16: looser (8 SD)
+for pc in [f'PC{i}' for i in range(5,17)]:
+    stats = prs_pca_table.aggregate(hl.agg.stats(prs_pca_table[pc]))
+    prs_pca_table = prs_pca_table.filter(
+        (prs_pca_table[pc] >= stats.mean - 8*stats.stdev) &
+        (prs_pca_table[pc] <= stats.mean + 8*stats.stdev))
+
+##### Inspect PRS Distribution #####
+prs_vals = prs_pca_table.aggregate(hl.agg.collect(prs_pca_table.prs_std))
+plt.hist(prs_vals, bins=50)
+plt.xlabel('Standardized PRS')
+plt.ylabel('Number of Individuals')
+plt.title('PRS Distribution')
+plt.show()
+
+mean_prs = prs_pca_table.aggregate(hl.agg.mean(prs_pca_table.prs_std))
+sd_prs = prs_pca_table.aggregate(hl.agg.stats(prs_pca_table.prs_std).stdev)
+print(f"PRS mean: {mean_prs}, SD: {sd_prs}")
+
+##### Merge PRS + PCA with phenotype/covariates #####
+# Rename IID to person_id
+prs_pca_table = prs_pca_table.rename({'IID': 'person_id'})
+
+# Load phenotype/covariate table
+phenotype_table = hl.read_table('/path/to/phenotype_covariates.ht')
+
+# Check number of matched samples
+n_common = phenotype_table.aggregate(
+    hl.agg.count_where(hl.is_defined(prs_pca_table[phenotype_table.person_id])))
+print(f"Number of matched samples: {n_common}")
+
+# Merge tables
+merged = phenotype_table.join(prs_pca_table, how='left')
+
+# Save merged table
+merged.write('/path/to/output/merged_prs_pca_phenotypes.ht', overwrite=True)
+
+# Verify merged table
+merged.describe()
