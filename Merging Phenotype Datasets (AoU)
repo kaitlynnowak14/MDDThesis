@@ -11,61 +11,57 @@ person_df = dataset_29072358_person_df
 survey_df = dataset_29072358_survey_df
 condition_df = dataset_29072358_condition_df
 
-##### Step 1: Summarize Condition Data - First MDD Diagnosis per Person #####
-# Convert condition date column to datetime
-condition_df['condition_start_datetime'] = pd.to_datetime(condition_df['condition_start_datetime'])
+##### Step 1: Keep only first one if multiple conditions of MDD #####
+conditions_unique = condition_df.sort_values("condition_start_datetime").drop_duplicates("person_id")
 
-# Get first MDD diagnosis per person
-condition_summary = (
-    condition_df.sort_values(by='condition_start_datetime')
-    .groupby('person_id', as_index=False)
-    .first()
-)
-
-# Select and rename columns
-condition_summary = condition_summary[['person_id', 'condition_start_datetime', 'standard_concept_name']]
-condition_summary.rename(columns={
-    'condition_start_datetime': 'first_MDD_diagnosis_date',
-    'standard_concept_name': 'MDD_concept_name'
-}, inplace=True)
-
-##### Step 2: Pivot Survey Data - Each Question as a Column #####
-survey_pivot = survey_df.pivot_table(
-    index='person_id',
-    columns='question_concept_id',
-    values='answer_concept_id',
-    aggfunc='first'  # Or 'list' if multiple answers should be kept
-).reset_index()
-
-##### Step 3: Decode Survey Question Concept IDs to Names #####
-# Get unique survey question concept IDs
+##### Step 2: Map Survery Questions and Answer to Names #####
+# Get unique question IDs and answer IDs
 question_ids = survey_df['question_concept_id'].unique().tolist()
+answer_ids = survey_df['answer_concept_id'].unique().tolist()
 
-# Create SQL query to get concept names
-question_concept_sql = f"""
+# Query concept table for question names
+question_sql = f"""
 SELECT concept_id, concept_name
 FROM `{os.environ['WORKSPACE_CDR']}.concept`
 WHERE concept_id IN ({','.join(map(str, question_ids))})
 """
+question_df = pd.read_gbq(question_sql, dialect='standard')
+question_map = dict(zip(question_df['concept_id'], question_df['concept_name']))
 
-# Run query and get concept names
-question_concept_df = pd.read_gbq(question_concept_sql, dialect='standard')
+# Query concept table for answer names
+answer_sql = f"""
+SELECT concept_id, concept_name
+FROM `{os.environ['WORKSPACE_CDR']}.concept`
+WHERE concept_id IN ({','.join(map(str, answer_ids))})
+"""
+answer_df = pd.read_gbq(answer_sql, dialect='standard')
+answer_map = dict(zip(answer_df['concept_id'], answer_df['concept_name']))
 
-# Create mapping: concept_id → concept_name
-id_to_name = dict(zip(question_concept_df['concept_id'], question_concept_df['concept_name']))
+# Replace IDs with readable names in survey_df
+survey_df['question'] = survey_df['question_concept_id'].map(question_map)
+survey_df['answer'] = survey_df['answer_concept_id'].map(answer_map)
 
-# Rename survey_pivot columns (skip 'person_id')
-survey_pivot.rename(columns=id_to_name, inplace=True)
+##### Step 3: Pivot Survey Data - Each Question as a Column #####
+survey_pivot = survey_df.pivot_table(
+    index='person_id',
+    columns='question',
+    values='answer',
+    aggfunc=lambda x: "; ".join(x.astype(str))
+).reset_index()
+
+# Flatten column names
+survey_pivot.columns.name = None
 
 ##### Step 4: Merge All DataFrames on person_id #####
 # Merge person data + condition summary
-merged_df = person_df.merge(condition_summary, on='person_id', how='left')
+merged_df = person_df.merge(conditions_unique, on='person_id', how='left')
 
 # Merge with renamed survey data
 merged_df = merged_df.merge(survey_pivot, on='person_id', how='left')
 
 ##### Step 5: Preview and Save #####
-print(merged_df.head())  # Preview first few rows
+# Preview first few rows
+print(merged_df.head()) 
 
 # Save final merged dataset
 merged_df.to_csv('all_of_us_merged_dataset.csv', index=False)
