@@ -65,6 +65,9 @@ print(f"Skewness of log-transformed age_of_onset: {age_log_skew:.3f}")
 ##### Coding Variables #####
 # Binary variables
 
+# Ordinal/Numeric
+
+##### Creating SES Combined Variable ####
 
 
 ##### Convert Pandas DataFrame to Hail Table #####
