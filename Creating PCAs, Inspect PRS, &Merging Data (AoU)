@@ -1,4 +1,4 @@
-## In Hail ##
+## In Python Jupyter Notebook (Hail) ##
 
 ##### Compute PCA on cohort_final genotypes #####
 import hail as hl
