@@ -1,4 +1,4 @@
-## In Hail ##
+## In Python (Jupyter Notebook) ##
 
 import numpy as np
 import matplotlib.pyplot as plt
