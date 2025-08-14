@@ -4,7 +4,7 @@ import pandas
 import os
 
 # This query represents dataset "My Dataset" for domain "person" and was generated for All of Us Controlled Tier Dataset v8
-dataset_65324705_person_sql = """
+dataset_29072358_person_sql = """
     SELECT
         person.person_id,
         person.birth_datetime as date_of_birth,
@@ -167,20 +167,48 @@ dataset_65324705_person_sql = """
             FROM
                 `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
             WHERE
-                has_array_data = 1 ) )"""
+                has_array_data = 1 ) 
+            AND cb_search_person.person_id NOT IN (SELECT
+                criteria.person_id 
+            FROM
+                (SELECT
+                    DISTINCT person_id, entry_date, concept_id 
+                FROM
+                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                WHERE
+                    (concept_id IN(SELECT
+                        DISTINCT c.concept_id 
+                    FROM
+                        `""" + os.environ["WORKSPACE_CDR"] + """.cb_criteria` c 
+                    JOIN
+                        (SELECT
+                            CAST(cr.id as string) AS id       
+                        FROM
+                            `""" + os.environ["WORKSPACE_CDR"] + """.cb_criteria` cr       
+                        WHERE
+                            concept_id IN (4299535)       
+                            AND full_text LIKE '%_rank1]%'      ) a 
+                            ON (c.path LIKE CONCAT('%.', a.id, '.%') 
+                            OR c.path LIKE CONCAT('%.', a.id) 
+                            OR c.path LIKE CONCAT(a.id, '.%') 
+                            OR c.path = a.id) 
+                    WHERE
+                        is_standard = 1 
+                        AND is_selectable = 1) 
+                    AND is_standard = 1 )) criteria ) )"""
 
-dataset_65324705_person_df = pandas.read_gbq(
-    dataset_65324705_person_sql,
+dataset_29072358_person_df = pandas.read_gbq(
+    dataset_29072358_person_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_65324705_person_df.head(5)
+dataset_29072358_person_df.head(5)
 import pandas
 import os
 
 # This query represents dataset "My Dataset" for domain "condition" and was generated for All of Us Controlled Tier Dataset v8
-dataset_65324705_condition_sql = """
+dataset_29072358_condition_sql = """
     SELECT
         c_occurrence.person_id,
         c_occurrence.condition_concept_id,
@@ -357,24 +385,52 @@ dataset_65324705_condition_sql = """
                     FROM
                         `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
                     WHERE
-                        has_array_data = 1 ) )
+                        has_array_data = 1 ) 
+                    AND cb_search_person.person_id NOT IN (SELECT
+                        criteria.person_id 
+                    FROM
+                        (SELECT
+                            DISTINCT person_id, entry_date, concept_id 
+                        FROM
+                            `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                        WHERE
+                            (concept_id IN(SELECT
+                                DISTINCT c.concept_id 
+                            FROM
+                                `""" + os.environ["WORKSPACE_CDR"] + """.cb_criteria` c 
+                            JOIN
+                                (SELECT
+                                    CAST(cr.id as string) AS id       
+                                FROM
+                                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_criteria` cr       
+                                WHERE
+                                    concept_id IN (4299535)       
+                                    AND full_text LIKE '%_rank1]%'      ) a 
+                                    ON (c.path LIKE CONCAT('%.', a.id, '.%') 
+                                    OR c.path LIKE CONCAT('%.', a.id) 
+                                    OR c.path LIKE CONCAT(a.id, '.%') 
+                                    OR c.path = a.id) 
+                            WHERE
+                                is_standard = 1 
+                                AND is_selectable = 1) 
+                            AND is_standard = 1 )) criteria ) )
             )) c_occurrence 
     LEFT JOIN
         `""" + os.environ["WORKSPACE_CDR"] + """.concept` c_standard_concept 
             ON c_occurrence.condition_concept_id = c_standard_concept.concept_id"""
 
-dataset_65324705_condition_df = pandas.read_gbq(
-    dataset_65324705_condition_sql,
+dataset_29072358_condition_df = pandas.read_gbq(
+    dataset_29072358_condition_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_65324705_condition_df.head(5)
+dataset_29072358_condition_df.head(5)
 import pandas
 import os
 
 # This query represents dataset "My Dataset" for domain "survey" and was generated for All of Us Controlled Tier Dataset v8
-dataset_65324705_survey_sql = """
+dataset_29072358_survey_sql = """
     SELECT
         answer.person_id,
         answer.question_concept_id,
@@ -529,13 +585,41 @@ dataset_65324705_survey_sql = """
                 FROM
                     `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
                 WHERE
-                    has_array_data = 1 ) )
+                    has_array_data = 1 ) 
+                AND cb_search_person.person_id NOT IN (SELECT
+                    criteria.person_id 
+                FROM
+                    (SELECT
+                        DISTINCT person_id, entry_date, concept_id 
+                    FROM
+                        `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                    WHERE
+                        (concept_id IN(SELECT
+                            DISTINCT c.concept_id 
+                        FROM
+                            `""" + os.environ["WORKSPACE_CDR"] + """.cb_criteria` c 
+                        JOIN
+                            (SELECT
+                                CAST(cr.id as string) AS id       
+                            FROM
+                                `""" + os.environ["WORKSPACE_CDR"] + """.cb_criteria` cr       
+                            WHERE
+                                concept_id IN (4299535)       
+                                AND full_text LIKE '%_rank1]%'      ) a 
+                                ON (c.path LIKE CONCAT('%.', a.id, '.%') 
+                                OR c.path LIKE CONCAT('%.', a.id) 
+                                OR c.path LIKE CONCAT(a.id, '.%') 
+                                OR c.path = a.id) 
+                        WHERE
+                            is_standard = 1 
+                            AND is_selectable = 1) 
+                        AND is_standard = 1 )) criteria ) )
         )"""
 
-dataset_65324705_survey_df = pandas.read_gbq(
-    dataset_65324705_survey_sql,
+dataset_29072358_survey_df = pandas.read_gbq(
+    dataset_29072358_survey_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_65324705_survey_df.head(5)
+dataset_29072358_survey_df.head(5)
