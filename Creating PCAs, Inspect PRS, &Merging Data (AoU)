@@ -85,23 +85,22 @@ mean_prs = prs_pca_table.aggregate(hl.agg.mean(prs_pca_table.prs_std))
 sd_prs = prs_pca_table.aggregate(hl.agg.stats(prs_pca_table.prs_std).stdev)
 print(f"PRS mean: {mean_prs}, SD: {sd_prs}")
 
-##### Merge PRS + PCA with phenotype/covariates #####
-# Rename IID to person_id
-prs_pca_table = prs_pca_table.rename({'IID': 'person_id'})
-
-# Load phenotype/covariate table
-phenotype_table = hl.read_table('/path/to/phenotype_covariates.ht')
+##### Merge PRS + PCA with phenotype/covariates/age of onset #####
+# Ensure keys match
+ht_pheno = ht_pheno.key_by('person_id')  # your phenotype Hail Table from merged_df
+prs_pca_table = prs_pca_table.rename({'IID': 'person_id'}).key_by('person_id')
 
 # Check number of matched samples
-n_common = phenotype_table.aggregate(
-    hl.agg.count_where(hl.is_defined(prs_pca_table[phenotype_table.person_id])))
+n_common = ht_pheno.aggregate(
+    hl.agg.count_where(hl.is_defined(prs_pca_table[ht_pheno.person_id])))
 print(f"Number of matched samples: {n_common}")
 
-# Merge tables
-merged = phenotype_table.join(prs_pca_table, how='left')
+# Merge tables: phenotypes + PRS + PCs
+merged = ht_pheno.join(prs_pca_table, how='left')
 
 # Save merged table
 merged.write('/path/to/output/merged_prs_pca_phenotypes.ht', overwrite=True)
 
 # Verify merged table
 merged.describe()
+merged.show(5)
