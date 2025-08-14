@@ -1,4 +1,4 @@
-## In Hail ##
+## In Python Jupyter Notebook (Pandas) ##
 
 import hail as hl
 import pandas as pd
