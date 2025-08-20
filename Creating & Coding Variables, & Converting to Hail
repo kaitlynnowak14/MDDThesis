@@ -3,6 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from scipy.stats import skew, kurtosis
 
 ##### Create Age of Onset Variable #####
 # Make sure date columns are datetime
@@ -29,22 +30,16 @@ plt.title('Distribution of Age of Onset for MDD')
 plt.show()
 
 ##### Check basic statistics and skewness #####
-from scipy.stats import skew, kurtosis
-
-# Summary statistics
 print("Summary Statistics for Age of Onset:")
 print(merged_df['age_of_onset'].describe())
 
-# Skewness and Kurtosis
-# Skewness ≈ 0 → roughly symmetric, Skewness > 0 → right-skewed (long tail to older ages), Skewness < 0 → left-skewed (long tail to younger ages)
 age_skew = skew(merged_df['age_of_onset'])
 age_kurt = kurtosis(merged_df['age_of_onset'])
 print(f"\nSkewness: {age_skew:.3f}")
 print(f"Kurtosis: {age_kurt:.3f}")
 
-##### If strongly skewed consider #####
-np.log(age_of_onset)
-#or np.sqrt(age_of_onset)
+##### Optional: log-transform if strongly skewed #####
+merged_df['age_of_onset_log'] = np.log(merged_df['age_of_onset'] + 1)
 
 # Log-transform age_of_onset (adding 1 to avoid log(0), though unlikely needed)
 merged_df['age_of_onset_log'] = np.log(merged_df['age_of_onset'] + 1)
@@ -62,13 +57,72 @@ plt.show()
 age_log_skew = skew(merged_df['age_of_onset_log'])
 print(f"Skewness of log-transformed age_of_onset: {age_log_skew:.3f}")
 
+############################
 ##### Coding Variables #####
-# Binary variables
+############################
 
-# Ordinal/Numeric
+##### Binary Variables #####
+# Sex: Male = 0, Female = 1
+merged_df['sex_binary'] = merged_df['sex_at_birth'].map({'Male': 0, 'Female': 1})
 
-##### Creating SES Combined Variable ####
+##### Ordinal/Numeric Variables #####
+# SES: Employment Status, Marital Status, Education
+# Education (ordered from lowest to highest)
+education_order = {
+    "Never Attended": 0,
+    "One Through Four": 1,
+    "Five Through Eight": 2,
+    "Nine Through Eleven": 3,
+    "Twelve Or GED": 4,
+    "College One to Three": 5,
+    "College Graduate": 6,
+    "Advanced Degree": 7
+}
+merged_df['education_ord'] = merged_df['Education Level'].map(education_order)
 
+# Employment (higher = more "engaged in workforce")
+employment_order = {
+    "Unable To Work": 0,
+    "Out Of Work One Or More": 1,
+    "Out Of Work Less Than One": 1,
+    "Homemaker": 2,
+    "Student": 2,
+    "Employed For Wages": 3,
+    "Self Employed": 4,
+    "Retired": 5,
+}
+merged_df['employment_ord'] = merged_df['Employment Status'].map(employment_order)
+
+# Marital Status
+marital_order_ord = {
+    "Never Married": 0,
+    "Separated": 1,
+    "Divorced": 2,
+    "Widowed": 2,
+    "Living With Partner": 3,
+    "Married": 4
+}
+
+merged_df['marital_ord'] = merged_df['Marital Status'].map(marital_order_ord)
+
+##### SES Combined Variable #####
+# Sum of the three ordinal variables (higher = higher SES)
+merged_df['SES_score'] = (
+    merged_df['education_ord'].fillna(0) +
+    merged_df['employment_ord'].fillna(0) +
+    merged_df['marital_ord'].fillna(0)
+)
+
+# Preview distribution
+print(merged_df[['education_ord', 'employment_ord', 'marital_ord', 'SES_score']].head())
+
+# Quick histogram
+plt.figure(figsize=(8,5))
+plt.hist(merged_df['SES_score'], bins=20, edgecolor='black')
+plt.xlabel("SES Score")
+plt.ylabel("Number of Individuals")
+plt.title("Distribution of Combined SES Score")
+plt.show()
 
 ##### Convert Pandas DataFrame to Hail Table #####
 ht_pheno = hl.Table.from_pandas(merged_df, key='person_id')
