@@ -7,9 +7,9 @@ import os
 hail.init()
 
 ##### Load DataFrames from Provided All of Us Queries #####
-person_df = dataset_29072358_person_df
-survey_df = dataset_29072358_survey_df
-condition_df = dataset_29072358_condition_df
+person_df = dataset_40661674_person_df
+survey_df = dataset_40661674_survey_df
+condition_df = dataset_40661674_condition_df
 
 ##### Step 1: Keep only first one if multiple conditions of MDD #####
 conditions_unique = condition_df.sort_values("condition_start_datetime").drop_duplicates("person_id")
