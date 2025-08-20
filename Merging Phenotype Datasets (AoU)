@@ -7,61 +7,32 @@ import os
 hail.init()
 
 ##### Load DataFrames from Provided All of Us Queries #####
-person_df = dataset_40661674_person_df
-survey_df = dataset_40661674_survey_df
-condition_df = dataset_40661674_condition_df
+person_df = dataset_27910912_person_df
+survey_df = dataset_27910912_survey_df
+condition_df = dataset_27910912_condition_df
 
-##### Step 1: Keep only first one if multiple conditions of MDD #####
+##### Step 1: Keep only the first condition occurrence per person (earliest date) #####
 conditions_unique = condition_df.sort_values("condition_start_datetime").drop_duplicates("person_id")
 
-##### Step 2: Map Survery Questions and Answer to Names #####
-# Get unique question IDs and answer IDs
-question_ids = survey_df['question_concept_id'].unique().tolist()
-answer_ids = survey_df['answer_concept_id'].unique().tolist()
+##### Step 2: Pivot Survey Data (each question becomes a column) #####
+# Remove redundant question prefix if needed
+survey_df['question'] = survey_df['question'].str.replace(r'^.*?:\s*', '', regex=True)
 
-# Query concept table for question names
-question_sql = f"""
-SELECT concept_id, concept_name
-FROM `{os.environ['WORKSPACE_CDR']}.concept`
-WHERE concept_id IN ({','.join(map(str, question_ids))})
-"""
-question_df = pd.read_gbq(question_sql, dialect='standard')
-question_map = dict(zip(question_df['concept_id'], question_df['concept_name']))
-
-# Query concept table for answer names
-answer_sql = f"""
-SELECT concept_id, concept_name
-FROM `{os.environ['WORKSPACE_CDR']}.concept`
-WHERE concept_id IN ({','.join(map(str, answer_ids))})
-"""
-answer_df = pd.read_gbq(answer_sql, dialect='standard')
-answer_map = dict(zip(answer_df['concept_id'], answer_df['concept_name']))
-
-# Replace IDs with readable names in survey_df
-survey_df['question'] = survey_df['question_concept_id'].map(question_map)
-survey_df['answer'] = survey_df['answer_concept_id'].map(answer_map)
-
-##### Step 3: Pivot Survey Data - Each Question as a Column #####
+# Pivot: one row per person, one column per survey question
 survey_pivot = survey_df.pivot_table(
     index='person_id',
     columns='question',
     values='answer',
-    aggfunc=lambda x: "; ".join(x.astype(str))
+    aggfunc=lambda x: "; ".join(x.astype(str).unique())  # keep unique responses if multiple
 ).reset_index()
 
 # Flatten column names
 survey_pivot.columns.name = None
 
-##### Step 4: Merge All DataFrames on person_id #####
-# Merge person data + condition summary
+##### Step 3: Merge All DataFrames on person_id #####
 merged_df = person_df.merge(conditions_unique, on='person_id', how='left')
-
-# Merge with renamed survey data
 merged_df = merged_df.merge(survey_pivot, on='person_id', how='left')
 
-##### Step 5: Preview and Save #####
-# Preview first few rows
-print(merged_df.head()) 
-
-# Save final merged dataset
+##### Step 4: Preview and Save #####
+print(merged_df.head())
 merged_df.to_csv('all_of_us_merged_dataset.csv', index=False)
