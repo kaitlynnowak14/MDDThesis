@@ -1,1 +1,34 @@
 import pandas as pd
+
+##### Define the variables and the category order
+categories = {
+    "sex_at_birth": ["Female", "Male"],
+    "Marital Status": ["Never Married", "Separated", "Divorced", "Widowed", "Living With Partner", "Married"],
+    "Education": ["Never Attended", "One Through Four", "Five Through Eight", "Nine Through Eleven", 
+                  "Twelve or GED", "College One to Three", "College Graduate", "Advanced Degree"],
+    "Employment Status": ["Unable To Work", "Out Of Work One Or More", "Out Of Work Less Than One", 
+                          "Homemaker", "Student", "Employed For Wages", "Self Employed"]
+}
+
+##### Function to valculate counts and percentages
+# Make table
+def make_table(df, categories):
+    results = []
+    total = len(df)
+    
+    for var, cats in categories.items():
+        # Add a header row
+        results.append({"Characteristic": var, "n": "", "%": ""})
+        for cat in cats:
+            n = (df[var] == cat).sum()
+            pct = round((n / total) * 100, 1) if total > 0 else 0
+            results.append({"Characteristic": f"   {cat}", "n": n, "%": pct})
+    return pd.DataFrame(results)
+
+# Building table
+table1 = make_table(merged_df, categories)
+
+# Format numbers with commas
+table1["n"] = table1["n"].apply(lambda x: f"{x:,}" if isinstance(x, int) else x)
+
+table1
