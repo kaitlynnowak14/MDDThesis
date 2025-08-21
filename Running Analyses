@@ -1,1 +1,9 @@
 
+##### Pull merged Hail table into Pandas #####
+import pandas as pd
+
+df = merged.to_pandas()
+
+print(df.head())
+
+##### Linear regression with interactions #####
