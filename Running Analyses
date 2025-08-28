@@ -1,9 +1,39 @@
 
+import statsmodels.formula.api as smf
+
 ##### Pull merged Hail table into Pandas #####
 import pandas as pd
-
 df = merged.to_pandas()
-
 print(df.head())
 
-##### Linear regression with interactions #####
+# Quick check on structure
+print(df.shape)   # rows, cols
+print(df.head())  # preview first rows
+print(df.columns) # check available variables
+
+########################
+##### MAIN EFFECTS #####
+########################
+# AgeOnset=β0​+β1​(PRS)+β2​(Sex)+β3​(SES)+ϵ
+model_main = smf.ols("age_of_onset ~ PRS + sex_binary + SES_score_z", data=merged_df).fit()
+print(model_main.summary())
+
+####################################
+##### 2-WAY INTERACTION MODELS #####
+####################################
+# AgeOnset=β0​+β1​(PRS)+β2​(Sex)+β3​(SES)+β4​(PRS×Sex)+β5​(PRS×SES)+β6​(Sex×SES)+ϵ
+model_interactions = smf.ols(
+    "age_of_onset ~ PRS * sex_binary + PRS * SES_score_z + sex_binary * SES_score_z",
+    data=merged_df
+).fit()
+print(model_interactions.summary())
+
+###################################
+##### 3-WAY INTERACTION MODEL #####
+###################################
+# AgeOnset=β0​+β1​(PRS)+β2​(Sex)+β3​(SES)+β4​(PRS×Sex)+β5​(PRS×SES)+β6​(Sex×SES)+β7​(PRS×Sex×SES)+ϵ
+model_threeway = smf.ols(
+    "age_of_onset ~ PRS * sex_binary * SES_score_z",
+    data=merged_df
+).fit()
+print(model_threeway.summary())
