@@ -1,4 +1,5 @@
 import pandas as pd
+from google.cloud import storage
 
 ##### Define the variables and the category order
 categories = {
@@ -33,6 +34,27 @@ table1["n"] = table1["n"].apply(lambda x: f"{x:,}" if isinstance(x, int) else x)
 
 table1
 
-# Save to bucket
+##### Save results #####
 bucket = "fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b"
-table1.to_csv(f"gs://{bucket}/results/table1_characteristics.csv", index=False)
+local_path = "/tmp/table1_characteristics.csv"
+gcs_path = f"gs://{bucket}/results/table1_characteristics.csv"
+
+# Save locally
+table1.to_csv(local_path, index=False)
+
+# Save to bucket
+table1.to_csv(gcs_path, index=False)
+
+##### Helper function to reload later #####
+def load_table1(bucket_name=bucket, blob_name="results/table1_characteristics.csv"):
+    client = storage.Client()
+    bucket_obj = client.bucket(bucket_name)
+    blob = bucket_obj.blob(blob_name)
+    local_reload_path = "/tmp/table1_characteristics_reload.csv"
+    blob.download_to_filename(local_reload_path)
+    print(f"Reloaded Table 1 from bucket to {local_reload_path}")
+    return pd.read_csv(local_reload_path)
+
+# To reload
+table1 = load_table1()
+print(table1.head())
