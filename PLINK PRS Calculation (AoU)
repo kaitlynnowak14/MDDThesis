@@ -75,3 +75,19 @@ plt.show()
 mean_prs = prs_table.aggregate(hl.agg.mean(prs_table.prs_std))
 sd_prs = prs_table.aggregate(hl.agg.stats(prs_table.prs_std).stdev)
 print(f"PRS mean: {mean_prs}, SD: {sd_prs}")
+
+##### Save #####
+import os
+
+# Define your bucket
+bucket = os.getenv('WORKSPACE_BUCKET')
+
+##### Convert Hail Table to Pandas #####
+prs_df = prs_table.to_pandas()
+
+# Save locally
+prs_df.to_csv('prs_scores_std.csv', index=False)
+
+# Upload to Cloud Storage
+!gsutil cp prs_scores_std.csv {bucket}/prs_scores_std.csv
+
