@@ -3,6 +3,7 @@
 import hail as hl
 import pandas as pd
 import os
+from google.cloud import storage
 
 hail.init()
 
@@ -35,7 +36,25 @@ merged_df = merged_df.merge(survey_pivot, on='person_id', how='left')
 
 ##### Step 4: Preview and Save #####
 print(merged_df.head())
+
+# Save locally
 merged_df.to_csv('all_of_us_merged_dataset.csv', index=False)
 
+# Save to bucket
 bucket = "fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b"
-merged_df.to_csv(f"gs://{bucket}/exports/all_of_us_merged_dataset.csv", index=False)
+gcs_path = f"gs://{bucket}/exports/all_of_us_merged_dataset.csv"
+merged_df.to_csv(gcs_path, index=False)
+
+##### Helper function to reload dataset later #####
+def load_merged_df(bucket_name=bucket, blob_name="exports/all_of_us_merged_dataset.csv"):
+    client = storage.Client()
+    bucket_obj = client.bucket(bucket_name)
+    blob = bucket_obj.blob(blob_name)
+    local_reload_path = "/tmp/all_of_us_merged_dataset_reload.csv"
+    blob.download_to_filename(local_reload_path)
+    print(f"Reloaded dataset from bucket to {local_reload_path}")
+    return pd.read_csv(local_reload_path)
+
+# Next time to load
+merged_df = load_merged_df()
+print(merged_df.head())
