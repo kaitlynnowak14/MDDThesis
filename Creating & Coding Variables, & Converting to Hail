@@ -195,3 +195,16 @@ print(summary_stats(merged_df, std_vars))
 ############################
 ht_pheno = hl.Table.from_pandas(merged_df, key='person_id')
 mt = mt.annotate_cols(**ht_pheno[mt.s])
+
+##### Save #####
+# Locally
+merged_df.to_csv('all_of_us_merged_dataset.csv', index=False)
+print("Saved merged dataset locally as all_of_us_merged_dataset.csv")
+
+# Save to GCS bucket (overwrite)
+bucket = "fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b"
+merged_df.to_csv(f"gs://{bucket}/exports/all_of_us_merged_dataset.csv", index=False)
+print(f"Saved merged dataset to GCS bucket: {bucket}")
+
+# Reload later if needed
+# merged_df = pd.read_csv('all_of_us_merged_dataset.csv')
