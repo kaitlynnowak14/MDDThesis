@@ -193,3 +193,35 @@ ax.set_ylabel('SES score')
 ax.set_zlabel('Predicted Age of Onset')
 ax.set_title('3-Way Interaction Surface (Sex=Male)')
 plt.show()
+
+##### Save #####
+import os
+
+# Define your bucket
+bucket = os.getenv('WORKSPACE_BUCKET')
+
+# 1️⃣ Save univariate results
+univariate_csv = 'univariate_results.csv'
+univariate_results.to_csv(univariate_csv, index=False)
+!gsutil cp {univariate_csv} gs://{bucket}/{univariate_csv}
+print(f"Univariate results saved to gs://{bucket}/{univariate_csv}")
+
+# 2️⃣ Save 2-way interaction results
+interaction_csv = 'interaction_results.csv'
+interaction_results_df.to_csv(interaction_csv, index=False)
+!gsutil cp {interaction_csv} gs://{bucket}/{interaction_csv}
+print(f"2-way interaction results saved to gs://{bucket}/{interaction_csv}")
+
+# 3️⃣ Save 3-way interaction coefficients
+three_way_csv = 'three_way_results.csv'
+three_way_df = pd.DataFrame([{
+    'Interaction': f'{sex}:{prs}:{ses}',
+    'Beta': coef_3way,
+    'p-value': pval_3way,
+    'R-squared': r2_3way
+}])
+three_way_df.to_csv(three_way_csv, index=False)
+!gsutil cp {three_way_csv} gs://{bucket}/{three_way_csv}
+print(f"3-way interaction results saved to gs://{bucket}/{three_way_csv}")
+
+
