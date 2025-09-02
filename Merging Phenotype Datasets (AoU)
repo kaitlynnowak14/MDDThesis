@@ -36,3 +36,6 @@ merged_df = merged_df.merge(survey_pivot, on='person_id', how='left')
 ##### Step 4: Preview and Save #####
 print(merged_df.head())
 merged_df.to_csv('all_of_us_merged_dataset.csv', index=False)
+
+bucket = "fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b"
+merged_df.to_csv(f"gs://{bucket}/exports/all_of_us_merged_dataset.csv", index=False)
