@@ -104,3 +104,10 @@ merged.write('/path/to/output/merged_prs_pca_phenotypes.ht', overwrite=True)
 # Verify merged table
 merged.describe()
 merged.show(5)
+
+# Save table to bucket too
+bucket = os.getenv('WORKSPACE_BUCKET')
+merged_ht_path = f'gs://{bucket}/merged_prs_pca_phenotypes.ht'
+merged.write(merged_ht_path, overwrite=True)
+print(f"Merged Hail Table saved to: {merged_ht_path}")
+
