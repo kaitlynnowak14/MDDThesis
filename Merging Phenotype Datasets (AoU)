@@ -7,9 +7,9 @@ import os
 hl.init()
 
 ##### Load DataFrames from Provided All of Us Queries #####
-person_df = dataset_85733341_person_df
-survey_df = dataset_85733341_survey_df
-condition_df = dataset_85733341_condition_df
+person_df = dataset_37371087_person_df
+survey_df = dataset_37371087_survey_df
+condition_df = dataset_37371087_condition_df
 
 ##### Step 1: Keep only the first condition occurrence per person (earliest date) #####
 conditions_unique = condition_df.sort_values("condition_start_datetime").drop_duplicates("person_id")
