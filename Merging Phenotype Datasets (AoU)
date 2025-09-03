@@ -12,38 +12,43 @@ survey_df = dataset_07705086_survey_df
 condition_df = dataset_07705086_condition_df
 
 ##### Step 1: Keep only the first condition occurrence per person (earliest date) #####
-conditions_unique = condition_df.sort_values("condition_start_datetime").drop_duplicates("person_id")
+conditions_unique = (
+    condition_df
+    .sort_values("condition_start_datetime")
+    .drop_duplicates("person_id")
+    .loc[:, ["person_id", "condition_start_datetime"]]
+)
 
-##### Step 2: Pivot Survey Data (each question becomes a column) #####
-survey_df['question'] = survey_df['question'].str.replace(r'^.*?:\s*', '', regex=True)
+##### Step 2: Pivot Survey Data (each question → column) #####
+survey_df["question"] = survey_df["question"].str.replace(r"^.*?:\s*", "", regex=True)
 
 survey_pivot = survey_df.pivot_table(
-    index='person_id',
-    columns='question',
-    values='answer',
+    index="person_id",
+    columns="question",
+    values="answer",
     aggfunc=lambda x: "; ".join(x.astype(str).unique())
 ).reset_index()
 
 survey_pivot.columns.name = None
 
 ##### Step 3: Merge All DataFrames on person_id #####
-merged_df = person_df.merge(conditions_unique, on='person_id', how='left')
-merged_df = merged_df.merge(survey_pivot, on='person_id', how='left')
+merged_df = person_df.merge(conditions_unique, on="person_id", how="left")
+merged_df = merged_df.merge(survey_pivot, on="person_id", how="left")
 
-##### Step 4: Save directly to workspace bucket #####
-bucket = os.getenv("WORKSPACE_BUCKET")  # e.g. "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b"
+##### Step 4: Save merged dataset to GCS #####
+bucket = os.getenv("WORKSPACE_BUCKET")
 if bucket is None:
     raise ValueError("WORKSPACE_BUCKET environment variable not found. Must run inside a Terra/All of Us notebook.")
 
 gcs_path = f"{bucket}/exports/all_of_us_merged_dataset.csv"
 merged_df.to_csv(gcs_path, index=False)
-print(f"Saved dataset to {gcs_path}")
+print(f"Saved merged dataset to {gcs_path}")
 
-##### Helper function to reload dataset later #####
+##### Step 5: Reload helper (optional) #####
 def load_merged_df(bucket_path=bucket, blob_path="exports/all_of_us_merged_dataset.csv"):
     full_path = f"{bucket_path}/{blob_path}"
     return pd.read_csv(full_path)
 
-# Example reload
+# Example reload preview
 merged_reload = load_merged_df()
 print(merged_reload.head())
