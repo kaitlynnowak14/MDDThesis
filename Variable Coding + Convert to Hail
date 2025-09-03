@@ -1,0 +1,68 @@
+from sklearn.preprocessing import StandardScaler
+import hail as hl
+import os
+
+############################
+##### CODING VARIABLES #####
+############################
+
+# Sex: binary coding
+merged_df['sex_binary'] = merged_df['sex_at_birth'].map({'Male': 0, 'Female': 1})
+
+# Education mapping
+education_order = {
+    "Never Attended": 0, "One Through Four": 0, "Five Through Eight": 0, "Nine Through Eleven": 0,
+    "Twelve Or GED": 1, "College One to Three": 2, "College Graduate": 3, "Advanced Degree": 4
+}
+merged_df['education_ord'] = merged_df['Education Level'].map(education_order)
+
+# Employment mapping
+employment_order = {
+    "Unable To Work": 0, "Out Of Work One Or More": 1, "Out Of Work Less Than One": 1,
+    "Homemaker": 2, "Student": 2, "Employed For Wages": 3, "Self Employed": 3, "Retired": 4
+}
+merged_df['employment_ord'] = merged_df['Employment Status'].map(employment_order)
+
+# Marital mapping
+marital_order = {
+    "Never Married": 0, "Separated": 1, "Divorced": 1, "Widowed": 1,
+    "Living With Partner": 2, "Married": 2
+}
+merged_df['marital_ord'] = merged_df['Marital Status'].map(marital_order)
+
+# Scale to 0–1
+merged_df['education_scaled'] = merged_df['education_ord'] / 4
+merged_df['employment_scaled'] = merged_df['employment_ord'] / 4
+merged_df['marital_scaled'] = merged_df['marital_ord'] / 2
+
+# Composite SES score
+merged_df['SES_score'] = (
+    merged_df['education_scaled'] +
+    merged_df['employment_scaled'] +
+    merged_df['marital_scaled']
+) / 3
+
+# Standardization (Z-scores)
+scaler = StandardScaler()
+merged_df[['education_z', 'employment_z', 'marital_z']] = scaler.fit_transform(
+    merged_df[['education_ord', 'employment_ord', 'marital_ord']]
+)
+merged_df['SES_score_z'] = merged_df[['education_z', 'employment_z', 'marital_z']].mean(axis=1)
+
+############################
+##### CONVERT TO HAIL ######
+############################
+
+ht_pheno = hl.Table.from_pandas(merged_df, key='person_id')
+
+# Assuming `mt` is already your genetic MatrixTable
+mt = mt.annotate_cols(**ht_pheno[mt.s])
+
+##### Save merged dataset to GCS #####
+bucket = os.getenv("WORKSPACE_BUCKET")  
+if bucket is None:
+    raise ValueError("WORKSPACE_BUCKET not found. Must run inside a Terra/All of Us notebook.")
+
+gcs_path = f"{bucket}/exports/all_of_us_merged_dataset.csv"
+merged_df.to_csv(gcs_path, index=False)
+print(f"Saved merged dataset to {gcs_path}")
