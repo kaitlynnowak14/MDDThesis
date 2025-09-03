@@ -4,8 +4,8 @@ import os
 ##### Define the variables and the category order
 categories = {
     "sex_at_birth": ["Female", "Male"],
-    "Marital Status": ["Never Married", "Separated", "Divorced", "Widowed", "Living With Partner", "Married"],
-    "Education": [
+    "Current Marital Status": ["Never Married", "Separated", "Divorced", "Widowed", "Living With Partner", "Married"],
+    "Highest Grade": [
         "Never Attended", "One Through Four", "Five Through Eight", "Nine Through Eleven", 
         "Twelve or GED", "College One to Three", "College Graduate", "Advanced Degree"
     ],
