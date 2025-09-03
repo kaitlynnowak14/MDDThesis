@@ -4,7 +4,7 @@ import pandas
 import os
 
 # This query represents dataset "European Ancestry Dataset" for domain "condition" and was generated for All of Us Controlled Tier Dataset v8
-dataset_27910912_condition_sql = """
+dataset_85733341_condition_sql = """
     SELECT
         c_occurrence.person_id,
         c_occurrence.condition_start_datetime 
@@ -77,80 +77,6 @@ dataset_27910912_condition_sql = """
                         FROM
                             `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
                         WHERE
-                            (concept_id IN (1585940) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585948) 
-                            OR  concept_id IN (1585940) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585947) 
-                            OR  concept_id IN (1585940) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585946) 
-                            OR  concept_id IN (1585940) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585945) 
-                            OR  concept_id IN (1585940) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585944) 
-                            OR  concept_id IN (1585940) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585943) 
-                            OR  concept_id IN (1585940) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585942) 
-                            OR  concept_id IN (1585940) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585941) 
-                            OR  concept_id IN (1585952) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585953) 
-                            OR  concept_id IN (1585952) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585954) 
-                            OR  concept_id IN (1585952) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585955) 
-                            OR  concept_id IN (1585952) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585956) 
-                            OR  concept_id IN (1585952) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585957) 
-                            OR  concept_id IN (1585952) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585958) 
-                            OR  concept_id IN (1585952) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585959) 
-                            OR  concept_id IN (1585952) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585960) 
-                            OR  concept_id IN (1585892) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585893) 
-                            OR  concept_id IN (1585892) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585894) 
-                            OR  concept_id IN (1585892) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585895) 
-                            OR  concept_id IN (1585892) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585896) 
-                            OR  concept_id IN (1585892) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585897) 
-                            OR  concept_id IN (1585892) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (1585898))) criteria ) 
-                    AND cb_search_person.person_id IN (SELECT
-                        criteria.person_id 
-                    FROM
-                        (SELECT
-                            DISTINCT person_id, entry_date, concept_id 
-                        FROM
-                            `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
-                        WHERE
                             (concept_id IN (1586155) 
                             AND is_standard = 0  
                             AND  value_source_concept_id IN (1585337))) criteria ) 
@@ -178,6 +104,80 @@ dataset_27910912_condition_sql = """
                         `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
                     WHERE
                         has_array_data = 1 ) 
+                    AND cb_search_person.person_id IN (SELECT
+                        criteria.person_id 
+                    FROM
+                        (SELECT
+                            DISTINCT person_id, entry_date, concept_id 
+                        FROM
+                            `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                        WHERE
+                            (concept_id IN (1585892) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585893) 
+                            OR  concept_id IN (1585892) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585894) 
+                            OR  concept_id IN (1585892) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585895) 
+                            OR  concept_id IN (1585892) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585896) 
+                            OR  concept_id IN (1585892) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585897) 
+                            OR  concept_id IN (1585892) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585898) 
+                            OR  concept_id IN (1585952) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585953) 
+                            OR  concept_id IN (1585952) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585955) 
+                            OR  concept_id IN (1585952) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585956) 
+                            OR  concept_id IN (1585952) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585954) 
+                            OR  concept_id IN (1585952) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585957) 
+                            OR  concept_id IN (1585952) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585958) 
+                            OR  concept_id IN (1585952) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585959) 
+                            OR  concept_id IN (1585952) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585960) 
+                            OR  concept_id IN (1585940) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585941) 
+                            OR  concept_id IN (1585940) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585942) 
+                            OR  concept_id IN (1585940) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585943) 
+                            OR  concept_id IN (1585940) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585944) 
+                            OR  concept_id IN (1585940) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585945) 
+                            OR  concept_id IN (1585940) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585946) 
+                            OR  concept_id IN (1585940) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585947) 
+                            OR  concept_id IN (1585940) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (1585948))) criteria ) 
                     AND cb_search_person.person_id NOT IN (SELECT
                         criteria.person_id 
                     FROM
@@ -214,44 +214,38 @@ dataset_27910912_condition_sql = """
                         FROM
                             `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
                         WHERE
-                            (concept_id IN (1585892) 
+                            (concept_id IN (1585940) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (903079) 
+                            OR  concept_id IN (1585940) 
+                            AND is_standard = 0  
+                            AND  value_source_concept_id IN (903096) 
+                            OR  concept_id IN (1585892) 
                             AND is_standard = 0  
                             AND  value_source_concept_id IN (903079) 
                             OR  concept_id IN (1585892) 
                             AND is_standard = 0  
                             AND  value_source_concept_id IN (903096) 
-                            OR  concept_id IN (1585940) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (903096) 
-                            OR  concept_id IN (1585940) 
-                            AND is_standard = 0  
-                            AND  value_source_concept_id IN (903079) 
                             OR  concept_id IN (1585952) 
                             AND is_standard = 0  
                             AND  value_source_concept_id IN (903079) 
                             OR  concept_id IN (1585952) 
                             AND is_standard = 0  
-                            AND  value_source_concept_id IN (903096))) criteria ) 
-                    AND cb_search_person.person_id NOT IN (SELECT
-                        person_id 
-                    FROM
-                        `""" + os.environ["WORKSPACE_CDR"] + """.person` p 
-                    WHERE
-                        sex_at_birth_concept_id IN (903096, 1177221, 0, 46273637, 1585849) ) )
+                            AND  value_source_concept_id IN (903096))) criteria ) )
             )) c_occurrence"""
 
-dataset_27910912_condition_df = pandas.read_gbq(
-    dataset_27910912_condition_sql,
+dataset_85733341_condition_df = pandas.read_gbq(
+    dataset_85733341_condition_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_27910912_condition_df.head(5)
+dataset_85733341_condition_df.head(5)
 import pandas
 import os
 
 # This query represents dataset "European Ancestry Dataset" for domain "person" and was generated for All of Us Controlled Tier Dataset v8
-dataset_27910912_person_sql = """
+dataset_85733341_person_sql = """
     SELECT
         person.person_id,
         person.birth_datetime as date_of_birth,
@@ -303,80 +297,6 @@ dataset_27910912_person_sql = """
                 FROM
                     `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
                 WHERE
-                    (concept_id IN (1585940) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585948) 
-                    OR  concept_id IN (1585940) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585947) 
-                    OR  concept_id IN (1585940) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585946) 
-                    OR  concept_id IN (1585940) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585945) 
-                    OR  concept_id IN (1585940) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585944) 
-                    OR  concept_id IN (1585940) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585943) 
-                    OR  concept_id IN (1585940) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585942) 
-                    OR  concept_id IN (1585940) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585941) 
-                    OR  concept_id IN (1585952) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585953) 
-                    OR  concept_id IN (1585952) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585954) 
-                    OR  concept_id IN (1585952) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585955) 
-                    OR  concept_id IN (1585952) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585956) 
-                    OR  concept_id IN (1585952) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585957) 
-                    OR  concept_id IN (1585952) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585958) 
-                    OR  concept_id IN (1585952) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585959) 
-                    OR  concept_id IN (1585952) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585960) 
-                    OR  concept_id IN (1585892) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585893) 
-                    OR  concept_id IN (1585892) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585894) 
-                    OR  concept_id IN (1585892) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585895) 
-                    OR  concept_id IN (1585892) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585896) 
-                    OR  concept_id IN (1585892) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585897) 
-                    OR  concept_id IN (1585892) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (1585898))) criteria ) 
-            AND cb_search_person.person_id IN (SELECT
-                criteria.person_id 
-            FROM
-                (SELECT
-                    DISTINCT person_id, entry_date, concept_id 
-                FROM
-                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
-                WHERE
                     (concept_id IN (1586155) 
                     AND is_standard = 0  
                     AND  value_source_concept_id IN (1585337))) criteria ) 
@@ -404,6 +324,80 @@ dataset_27910912_person_sql = """
                 `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
             WHERE
                 has_array_data = 1 ) 
+            AND cb_search_person.person_id IN (SELECT
+                criteria.person_id 
+            FROM
+                (SELECT
+                    DISTINCT person_id, entry_date, concept_id 
+                FROM
+                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                WHERE
+                    (concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585893) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585894) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585895) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585896) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585897) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585898) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585953) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585955) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585956) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585954) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585957) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585958) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585959) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585960) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585941) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585942) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585943) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585944) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585945) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585946) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585947) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585948))) criteria ) 
             AND cb_search_person.person_id NOT IN (SELECT
                 criteria.person_id 
             FROM
@@ -440,43 +434,37 @@ dataset_27910912_person_sql = """
                 FROM
                     `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
                 WHERE
-                    (concept_id IN (1585892) 
+                    (concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (903079) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (903096) 
+                    OR  concept_id IN (1585892) 
                     AND is_standard = 0  
                     AND  value_source_concept_id IN (903079) 
                     OR  concept_id IN (1585892) 
                     AND is_standard = 0  
                     AND  value_source_concept_id IN (903096) 
-                    OR  concept_id IN (1585940) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (903096) 
-                    OR  concept_id IN (1585940) 
-                    AND is_standard = 0  
-                    AND  value_source_concept_id IN (903079) 
                     OR  concept_id IN (1585952) 
                     AND is_standard = 0  
                     AND  value_source_concept_id IN (903079) 
                     OR  concept_id IN (1585952) 
                     AND is_standard = 0  
-                    AND  value_source_concept_id IN (903096))) criteria ) 
-            AND cb_search_person.person_id NOT IN (SELECT
-                person_id 
-            FROM
-                `""" + os.environ["WORKSPACE_CDR"] + """.person` p 
-            WHERE
-                sex_at_birth_concept_id IN (903096, 1177221, 0, 46273637, 1585849) ) )"""
+                    AND  value_source_concept_id IN (903096))) criteria ) )"""
 
-dataset_27910912_person_df = pandas.read_gbq(
-    dataset_27910912_person_sql,
+dataset_85733341_person_df = pandas.read_gbq(
+    dataset_85733341_person_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_27910912_person_df.head(5)
+dataset_85733341_person_df.head(5)
 import pandas
 import os
 
 # This query represents dataset "European Ancestry Dataset" for domain "survey" and was generated for All of Us Controlled Tier Dataset v8
-dataset_27910912_survey_sql = """
+dataset_85733341_survey_sql = """
     SELECT
         answer.person_id,
         answer.question,
@@ -529,80 +517,6 @@ dataset_27910912_survey_sql = """
                     FROM
                         `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
                     WHERE
-                        (concept_id IN (1585940) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585948) 
-                        OR  concept_id IN (1585940) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585947) 
-                        OR  concept_id IN (1585940) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585946) 
-                        OR  concept_id IN (1585940) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585945) 
-                        OR  concept_id IN (1585940) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585944) 
-                        OR  concept_id IN (1585940) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585943) 
-                        OR  concept_id IN (1585940) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585942) 
-                        OR  concept_id IN (1585940) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585941) 
-                        OR  concept_id IN (1585952) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585953) 
-                        OR  concept_id IN (1585952) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585954) 
-                        OR  concept_id IN (1585952) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585955) 
-                        OR  concept_id IN (1585952) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585956) 
-                        OR  concept_id IN (1585952) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585957) 
-                        OR  concept_id IN (1585952) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585958) 
-                        OR  concept_id IN (1585952) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585959) 
-                        OR  concept_id IN (1585952) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585960) 
-                        OR  concept_id IN (1585892) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585893) 
-                        OR  concept_id IN (1585892) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585894) 
-                        OR  concept_id IN (1585892) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585895) 
-                        OR  concept_id IN (1585892) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585896) 
-                        OR  concept_id IN (1585892) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585897) 
-                        OR  concept_id IN (1585892) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (1585898))) criteria ) 
-                AND cb_search_person.person_id IN (SELECT
-                    criteria.person_id 
-                FROM
-                    (SELECT
-                        DISTINCT person_id, entry_date, concept_id 
-                    FROM
-                        `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
-                    WHERE
                         (concept_id IN (1586155) 
                         AND is_standard = 0  
                         AND  value_source_concept_id IN (1585337))) criteria ) 
@@ -630,6 +544,80 @@ dataset_27910912_survey_sql = """
                     `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
                 WHERE
                     has_array_data = 1 ) 
+                AND cb_search_person.person_id IN (SELECT
+                    criteria.person_id 
+                FROM
+                    (SELECT
+                        DISTINCT person_id, entry_date, concept_id 
+                    FROM
+                        `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                    WHERE
+                        (concept_id IN (1585892) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585893) 
+                        OR  concept_id IN (1585892) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585894) 
+                        OR  concept_id IN (1585892) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585895) 
+                        OR  concept_id IN (1585892) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585896) 
+                        OR  concept_id IN (1585892) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585897) 
+                        OR  concept_id IN (1585892) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585898) 
+                        OR  concept_id IN (1585952) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585953) 
+                        OR  concept_id IN (1585952) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585955) 
+                        OR  concept_id IN (1585952) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585956) 
+                        OR  concept_id IN (1585952) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585954) 
+                        OR  concept_id IN (1585952) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585957) 
+                        OR  concept_id IN (1585952) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585958) 
+                        OR  concept_id IN (1585952) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585959) 
+                        OR  concept_id IN (1585952) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585960) 
+                        OR  concept_id IN (1585940) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585941) 
+                        OR  concept_id IN (1585940) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585942) 
+                        OR  concept_id IN (1585940) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585943) 
+                        OR  concept_id IN (1585940) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585944) 
+                        OR  concept_id IN (1585940) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585945) 
+                        OR  concept_id IN (1585940) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585946) 
+                        OR  concept_id IN (1585940) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585947) 
+                        OR  concept_id IN (1585940) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (1585948))) criteria ) 
                 AND cb_search_person.person_id NOT IN (SELECT
                     criteria.person_id 
                 FROM
@@ -666,36 +654,30 @@ dataset_27910912_survey_sql = """
                     FROM
                         `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
                     WHERE
-                        (concept_id IN (1585892) 
+                        (concept_id IN (1585940) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (903079) 
+                        OR  concept_id IN (1585940) 
+                        AND is_standard = 0  
+                        AND  value_source_concept_id IN (903096) 
+                        OR  concept_id IN (1585892) 
                         AND is_standard = 0  
                         AND  value_source_concept_id IN (903079) 
                         OR  concept_id IN (1585892) 
                         AND is_standard = 0  
                         AND  value_source_concept_id IN (903096) 
-                        OR  concept_id IN (1585940) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (903096) 
-                        OR  concept_id IN (1585940) 
-                        AND is_standard = 0  
-                        AND  value_source_concept_id IN (903079) 
                         OR  concept_id IN (1585952) 
                         AND is_standard = 0  
                         AND  value_source_concept_id IN (903079) 
                         OR  concept_id IN (1585952) 
                         AND is_standard = 0  
-                        AND  value_source_concept_id IN (903096))) criteria ) 
-                AND cb_search_person.person_id NOT IN (SELECT
-                    person_id 
-                FROM
-                    `""" + os.environ["WORKSPACE_CDR"] + """.person` p 
-                WHERE
-                    sex_at_birth_concept_id IN (903096, 1177221, 0, 46273637, 1585849) ) )
+                        AND  value_source_concept_id IN (903096))) criteria ) )
         )"""
 
-dataset_27910912_survey_df = pandas.read_gbq(
-    dataset_27910912_survey_sql,
+dataset_85733341_survey_df = pandas.read_gbq(
+    dataset_85733341_survey_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_27910912_survey_df.head(5)
+dataset_85733341_survey_df.head(5)
