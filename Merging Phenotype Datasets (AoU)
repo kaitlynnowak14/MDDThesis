@@ -1,4 +1,6 @@
-## In Python Jupyter Notebook (Pandas) ##
+####################################
+##### Merging Phenotype Tables #####
+####################################
 
 import hail as hl
 import pandas as pd
@@ -6,12 +8,26 @@ import os
 
 hl.init()
 
-##### Load DataFrames from Provided All of Us Queries #####
+##### Load DataFrames from Provided ALl of Us Queries #####
 person_df = dataset_07705086_person_df
 survey_df = dataset_07705086_survey_df
 condition_df = dataset_07705086_condition_df
 
-##### Step 1: Keep only the first condition occurrence per person (earliest date) #####
+##### Inspect Phenotype Tables #####
+print("=== Person Phenotypes ===")
+print(person_df.info()) # gives variable names, datatypes, non-null counts
+display(person_df.head(10)) # first 10 rows check in a table
+
+print("\n=== Condition Phenotypes ===")
+print(condition_df.info())
+display(condition_df.head(10))
+
+print("\n=== Survey Phenotypes ===")
+print(survey_df.info())
+display(survey_df.head(10))
+
+##### Merge Datasets #####
+# Keep only the first condition occurrence per person (earliest date)
 conditions_unique = (
     condition_df
     .sort_values("condition_start_datetime")
@@ -19,7 +35,7 @@ conditions_unique = (
     .loc[:, ["person_id", "condition_start_datetime"]]
 )
 
-##### Step 2: Pivot Survey Data (each question → column) #####
+# Pivot Survey Data (each question -> column)
 survey_df["question"] = survey_df["question"].str.replace(r"^.*?:\s*", "", regex=True)
 
 survey_pivot = survey_df.pivot_table(
@@ -31,11 +47,11 @@ survey_pivot = survey_df.pivot_table(
 
 survey_pivot.columns.name = None
 
-##### Step 3: Merge All DataFrames on person_id #####
+# Merge all dataframes on person_id
 merged_df = person_df.merge(conditions_unique, on="person_id", how="left")
 merged_df = merged_df.merge(survey_pivot, on="person_id", how="left")
 
-##### Step 4: Save merged dataset to GCS #####
+# Save merged dataset to GCS
 bucket = os.getenv("WORKSPACE_BUCKET")
 if bucket is None:
     raise ValueError("WORKSPACE_BUCKET environment variable not found. Must run inside a Terra/All of Us notebook.")
@@ -43,12 +59,3 @@ if bucket is None:
 gcs_path = f"{bucket}/exports/all_of_us_merged_dataset.csv"
 merged_df.to_csv(gcs_path, index=False)
 print(f"Saved merged dataset to {gcs_path}")
-
-##### Step 5: Reload helper (optional) #####
-def load_merged_df(bucket_path=bucket, blob_path="exports/all_of_us_merged_dataset.csv"):
-    full_path = f"{bucket_path}/{blob_path}"
-    return pd.read_csv(full_path)
-
-# Example reload preview
-merged_reload = load_merged_df()
-print(merged_reload.head())
