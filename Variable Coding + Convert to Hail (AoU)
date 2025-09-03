@@ -12,7 +12,19 @@ import hail as hl
 hl.init()
 
 ##### Helper function already defined in previous block #####
-# save_to_bucket(df=None, fig=None, filename="output.csv")
+bucket = os.getenv("WORKSPACE_BUCKET")
+if bucket is None:
+    raise ValueError("WORKSPACE_BUCKET environment variable not found.")
+
+def save_to_bucket(df=None, fig=None, filename="output.csv"):
+    local_path = filename
+    if df is not None:
+        df.to_csv(local_path, index=False)
+    if fig is not None:
+        fig.savefig(local_path, bbox_inches='tight')
+        plt.close(fig)
+    !gsutil cp {local_path} {bucket}/{filename}
+    print(f"Saved {filename} to {bucket}")
 
 ##### Coding Variables #####
 # Binary sex coding
@@ -95,6 +107,30 @@ plt.close(fig)
 
 # Save final dataset with all coded/scaled/z variables
 save_to_bucket(df=merged_df, filename="all_of_us_final_dataset.csv")
+
+##### Summary Statistics #####
+def compute_summary_stats(df, var_list):
+    stats = []
+    for var in var_list:
+        stats.append({
+            "Variable": var,
+            "Mean": df[var].mean(),
+            "Median": df[var].median(),
+            "StdDev": df[var].std(),
+            "Min": df[var].min(),
+            "Max": df[var].max(),
+            "Skew": skew(df[var].dropna()),
+            "Kurtosis": kurtosis(df[var].dropna())
+        })
+    return pd.DataFrame(stats)
+
+# Summary stats for scaled variables
+scaled_stats_df = compute_summary_stats(merged_df, scaled_vars)
+save_to_bucket(df=scaled_stats_df, filename="summary_scaled_variables.csv")
+
+# Summary stats for standardized variables
+std_stats_df = compute_summary_stats(merged_df, std_vars)
+save_to_bucket(df=std_stats_df, filename="summary_standardized_variables.csv")
 
 ##### CONVERT TO HAIL ######
 ht_pheno = hl.Table.from_pandas(merged_df, key='person_id')
