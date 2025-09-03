@@ -1,33 +1,17 @@
-## In Python Jupyer Notebook(Pandas & Hail) ##
+#################################
+##### Age of Onset Variable #####
+#################################
 
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
-import os
+import matplotlib.pyplot as plt
 from scipy.stats import skew, kurtosis
+import os
 
-##### Helper function to save outputs to bucket #####
+# Ensure bucket exists
 bucket = os.getenv("WORKSPACE_BUCKET")
 if bucket is None:
-    raise ValueError("WORKSPACE_BUCKET not found. Must run inside Terra/All of Us notebook.")
-
-def save_to_bucket(df=None, fig=None, filename="output.csv"):
-    """
-    Save a DataFrame or matplotlib figure to the workspace bucket.
-    - df: Pandas DataFrame to save as CSV
-    - fig: Matplotlib figure to save as PNG
-    - filename: Name of the file (e.g., "ages.csv" or "histogram.png")
-    """
-    gcs_path = f"{bucket}/exports/{filename}"
-    
-    if df is not None:
-        df.to_csv(gcs_path, index=False)
-        print(f"Saved DataFrame to {gcs_path}")
-    elif fig is not None:
-        fig.savefig(gcs_path, bbox_inches="tight", dpi=300)
-        print(f"Saved figure to {gcs_path}")
-    else:
-        print("Nothing to save.")
+    raise ValueError("WORKSPACE_BUCKET environment variable not found.")
 
 ##### Create Age of Onset Variable #####
 merged_df['date_of_birth'] = pd.to_datetime(merged_df['date_of_birth'])
@@ -37,41 +21,48 @@ merged_df['age_of_onset'] = np.floor(
     (merged_df['condition_start_datetime'] - merged_df['date_of_birth']).dt.days / 365.25
 ).astype('Int64')
 
+# Drop rows missing age of onset
 merged_df = merged_df.dropna(subset=['age_of_onset'])
 
 # Save dataset with age_of_onset
-save_to_bucket(df=merged_df, filename="all_of_us_with_age_of_onset.csv")
-
-print(merged_df[['person_id', 'date_of_birth', 'condition_start_datetime', 'age_of_onset']].head())
+csv_path = f"{bucket}/exports/merged_with_age_of_onset.csv"
+merged_df.to_csv(csv_path, index=False)
+print(f"Saved merged dataset with age_of_onset to: {csv_path}")
 
 ##### Plot histogram #####
-fig, ax = plt.subplots(figsize=(10,6))
-ax.hist(merged_df['age_of_onset'], bins=30, color='skyblue', edgecolor='black')
-ax.set_xlabel('Age of Onset (years)')
-ax.set_ylabel('Number of Individuals')
-ax.set_title('Distribution of Age of Onset for MDD')
-save_to_bucket(fig=fig, filename="age_of_onset_histogram.png")
-plt.close(fig)
+plt.figure(figsize=(10,6))
+plt.hist(merged_df['age_of_onset'], bins=30, color='skyblue', edgecolor='black')
+plt.xlabel('Age of Onset (years)')
+plt.ylabel('Number of Individuals')
+plt.title('Distribution of Age of Onset for MDD')
+age_hist_path = f"{bucket}/plots/age_of_onset_hist.png"
+plt.savefig(age_hist_path)
+plt.close()
+print(f"Saved histogram to: {age_hist_path}")
 
 ##### Basic stats #####
-print("Summary Statistics for Age of Onset:")
-print(merged_df['age_of_onset'].describe())
-
-age_skew = skew(merged_df['age_of_onset'])
-age_kurt = kurtosis(merged_df['age_of_onset'])
-print(f"\nSkewness: {age_skew:.3f}")
-print(f"Kurtosis: {age_kurt:.3f}")
+summary_stats_df = pd.DataFrame({
+    'Mean': [merged_df['age_of_onset'].mean()],
+    'Median': [merged_df['age_of_onset'].median()],
+    'Std': [merged_df['age_of_onset'].std()],
+    'Min': [merged_df['age_of_onset'].min()],
+    'Max': [merged_df['age_of_onset'].max()],
+    'Skew': [skew(merged_df['age_of_onset'])],
+    'Kurtosis': [kurtosis(merged_df['age_of_onset'])]
+})
+summary_stats_path = f"{bucket}/exports/age_of_onset_summary.csv"
+summary_stats_df.to_csv(summary_stats_path, index=False)
+print(f"Saved summary stats to: {summary_stats_path}")
 
 ##### Log-transform (optional) #####
 merged_df['age_of_onset_log'] = np.log(merged_df['age_of_onset'] + 1)
-
-fig, ax = plt.subplots(figsize=(10,6))
-merged_df['age_of_onset_log'].plot(kind='hist', bins=30, color='lightgreen', edgecolor='black', density=True, ax=ax)
-merged_df['age_of_onset_log'].plot(kind='kde', color='red', ax=ax)
-ax.set_xlabel('Log-transformed Age of Onset')
-ax.set_ylabel('Density')
-ax.set_title('Distribution of Log-transformed Age of Onset for MDD')
-save_to_bucket(fig=fig, filename="age_of_onset_log_histogram.png")
-plt.close(fig)
-
-print(f"Skewness of log-transformed age_of_onset: {skew(merged_df['age_of_onset_log']):.3f}")
+plt.figure(figsize=(10,6))
+merged_df['age_of_onset_log'].plot(kind='hist', bins=30, color='lightgreen', edgecolor='black', density=True)
+merged_df['age_of_onset_log'].plot(kind='kde', color='red')
+plt.xlabel('Log-transformed Age of Onset')
+plt.ylabel('Density')
+plt.title('Distribution of Log-transformed Age of Onset for MDD')
+log_hist_path = f"{bucket}/plots/age_of_onset_log_hist.png"
+plt.savefig(log_hist_path)
+plt.close()
+print(f"Saved log-transformed histogram to: {log_hist_path}")
