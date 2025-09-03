@@ -1,18 +1,21 @@
 import pandas as pd
-from google.cloud import storage
+import os
 
 ##### Define the variables and the category order
 categories = {
     "sex_at_birth": ["Female", "Male"],
     "Marital Status": ["Never Married", "Separated", "Divorced", "Widowed", "Living With Partner", "Married"],
-    "Education": ["Never Attended", "One Through Four", "Five Through Eight", "Nine Through Eleven", 
-                  "Twelve or GED", "College One to Three", "College Graduate", "Advanced Degree"],
-    "Employment Status": ["Unable To Work", "Out Of Work One Or More", "Out Of Work Less Than One", 
-                          "Homemaker", "Student", "Employed For Wages", "Self Employed"]
+    "Education": [
+        "Never Attended", "One Through Four", "Five Through Eight", "Nine Through Eleven", 
+        "Twelve or GED", "College One to Three", "College Graduate", "Advanced Degree"
+    ],
+    "Employment Status": [
+        "Unable To Work", "Out Of Work One Or More", "Out Of Work Less Than One", 
+        "Homemaker", "Student", "Employed For Wages", "Self Employed"
+    ]
 }
 
-##### Function to valculate counts and percentages
-# Make table
+##### Function to calculate counts and percentages
 def make_table(df, categories):
     results = []
     total = len(df)
@@ -26,35 +29,26 @@ def make_table(df, categories):
             results.append({"Characteristic": f"   {cat}", "n": n, "%": pct})
     return pd.DataFrame(results)
 
-# Building table
+# Build Table 1
 table1 = make_table(merged_df, categories)
 
 # Format numbers with commas
 table1["n"] = table1["n"].apply(lambda x: f"{x:,}" if isinstance(x, int) else x)
 
-table1
+##### Save results directly to workspace bucket #####
+bucket = os.getenv("WORKSPACE_BUCKET")  # e.g. "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b"
+if bucket is None:
+    raise ValueError("WORKSPACE_BUCKET environment variable not found. Must run inside a Terra/All of Us notebook.")
 
-##### Save results #####
-bucket = "fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b"
-local_path = "/tmp/table1_characteristics.csv"
-gcs_path = f"gs://{bucket}/results/table1_characteristics.csv"
-
-# Save locally
-table1.to_csv(local_path, index=False)
-
-# Save to bucket
+gcs_path = f"{bucket}/results/table1_characteristics.csv"
 table1.to_csv(gcs_path, index=False)
+print(f"Saved Table 1 to {gcs_path}")
 
 ##### Helper function to reload later #####
-def load_table1(bucket_name=bucket, blob_name="results/table1_characteristics.csv"):
-    client = storage.Client()
-    bucket_obj = client.bucket(bucket_name)
-    blob = bucket_obj.blob(blob_name)
-    local_reload_path = "/tmp/table1_characteristics_reload.csv"
-    blob.download_to_filename(local_reload_path)
-    print(f"Reloaded Table 1 from bucket to {local_reload_path}")
-    return pd.read_csv(local_reload_path)
+def load_table1(bucket_path=bucket, blob_path="results/table1_characteristics.csv"):
+    full_path = f"{bucket_path}/{blob_path}"
+    return pd.read_csv(full_path)
 
-# To reload
-table1 = load_table1()
-print(table1.head())
+# Reload example
+table1_reload = load_table1()
+print(table1_reload.head())
