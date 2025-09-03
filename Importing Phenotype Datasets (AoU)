@@ -4,7 +4,7 @@ import pandas
 import os
 
 # This query represents dataset "European Ancestry Dataset" for domain "condition" and was generated for All of Us Controlled Tier Dataset v8
-dataset_85733341_condition_sql = """
+dataset_86933257_condition_sql = """
     SELECT
         c_occurrence.person_id,
         c_occurrence.condition_start_datetime 
@@ -234,18 +234,18 @@ dataset_85733341_condition_sql = """
                             AND  value_source_concept_id IN (903096))) criteria ) )
             )) c_occurrence"""
 
-dataset_85733341_condition_df = pandas.read_gbq(
-    dataset_85733341_condition_sql,
+dataset_86933257_condition_df = pandas.read_gbq(
+    dataset_86933257_condition_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_85733341_condition_df.head(5)
+dataset_86933257_condition_df.head(5)
 import pandas
 import os
 
 # This query represents dataset "European Ancestry Dataset" for domain "person" and was generated for All of Us Controlled Tier Dataset v8
-dataset_85733341_person_sql = """
+dataset_86933257_person_sql = """
     SELECT
         person.person_id,
         person.birth_datetime as date_of_birth,
@@ -453,18 +453,18 @@ dataset_85733341_person_sql = """
                     AND is_standard = 0  
                     AND  value_source_concept_id IN (903096))) criteria ) )"""
 
-dataset_85733341_person_df = pandas.read_gbq(
-    dataset_85733341_person_sql,
+dataset_86933257_person_df = pandas.read_gbq(
+    dataset_86933257_person_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_85733341_person_df.head(5)
+dataset_86933257_person_df.head(5)
 import pandas
 import os
 
 # This query represents dataset "European Ancestry Dataset" for domain "survey" and was generated for All of Us Controlled Tier Dataset v8
-dataset_85733341_survey_sql = """
+dataset_86933257_survey_sql = """
     SELECT
         answer.person_id,
         answer.question,
@@ -674,10 +674,10 @@ dataset_85733341_survey_sql = """
                         AND  value_source_concept_id IN (903096))) criteria ) )
         )"""
 
-dataset_85733341_survey_df = pandas.read_gbq(
-    dataset_85733341_survey_sql,
+dataset_86933257_survey_df = pandas.read_gbq(
+    dataset_86933257_survey_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_85733341_survey_df.head(5)
+dataset_86933257_survey_df.head(5)
