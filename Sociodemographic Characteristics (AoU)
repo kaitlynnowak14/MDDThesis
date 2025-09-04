@@ -18,7 +18,7 @@ categories = {
     ],
     "Highest educational level": [
         ["Never Attended", "One Through Four", "Five Through Eight", "Nine Through Eleven"],  # collapsed row
-        ["Twelve or GED"],
+        ["Twelve Or GED"],
         ["College One to Three"],
         ["College Graduate"],
         ["Advanced Degree"]
