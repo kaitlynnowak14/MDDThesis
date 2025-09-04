@@ -1,42 +1,75 @@
+############################################
+##### Sociodemographic Characteristics #####
+############################################
+
 import pandas as pd
 import os
 
-##### Define the variables and the category order
+##### Define the variables and collapsed categories for display #####
 categories = {
-    "sex_at_birth": ["Female", "Male"],
-    "Current Marital Status": ["Never Married", "Separated", "Divorced", "Widowed", "Living With Partner", "Married"],
-    "Highest Grade": [
-        "Never Attended", "One Through Four", "Five Through Eight", "Nine Through Eleven", 
-        "Twelve or GED", "College One to Three", "College Graduate", "Advanced Degree"
+    "Sex at Birth": [
+        ["Female"],
+        ["Male"]
+    ],
+    "Marital status": [
+        ["Never Married"],
+        ["Separated", "Divorced", "Widowed"],  # collapsed row
+        ["Living With Partner", "Married"]     # collapsed row
+    ],
+    "Highest educational level": [
+        ["Never Attended", "One Through Four", "Five Through Eight", "Nine Through Eleven"],  # collapsed row
+        ["Twelve or GED"],
+        ["College One to Three"],
+        ["College Graduate"],
+        ["Advanced Degree"]
     ],
     "Employment Status": [
-        "Unable To Work", "Out Of Work One Or More", "Out Of Work Less Than One", 
-        "Homemaker", "Student", "Employed For Wages", "Self Employed"
+        ["Unable To Work"],
+        ["Out Of Work One Or More", "Out Of Work Less Than One"],  # collapsed row
+        ["Homemaker", "Student"],                                 # collapsed row
+        ["Employed For Wages", "Self Employed"],                  # collapsed row
+        ["Retired"]
     ]
 }
 
-##### Function to calculate counts and percentages
+##### Function to build Table 1 #####
 def make_table(df, categories):
     results = []
     total = len(df)
-    
-    for var, cats in categories.items():
-        # Add a header row
-        results.append({"Characteristic": var, "n": "", "%": ""})
-        for cat in cats:
-            n = (df[var] == cat).sum()
+
+    for var, groups in categories.items():
+        results.append({"Characteristic": var, "n": "", "%": ""})  # header row
+        for group in groups:
+            # count all values in this group
+            n = df[var].isin(group).sum()
             pct = round((n / total) * 100, 1) if total > 0 else 0
-            results.append({"Characteristic": f"   {cat}", "n": n, "%": pct})
+            # format display label: join if multiple
+            label = "   " + "/".join(group)
+            results.append({"Characteristic": label, "n": n, "%": pct})
+    
     return pd.DataFrame(results)
 
-# Build Table 1
-table1 = make_table(merged_df, categories)
+##### Clean survey columns first (strip prefixes) #####
+for col in ["Current Marital Status", "Highest Grade", "Employment Status"]:
+    if col in merged_df.columns:
+        merged_df[col] = merged_df[col].str.replace(r"^.*?:\s*", "", regex=True)
+
+# Map to your chosen display names
+renamed_df = merged_df.rename(columns={
+    "sex_at_birth": "Sex at Birth",
+    "Current Marital Status": "Marital status",
+    "Highest Grade": "Highest educational level",
+    "Employment Status": "Employment Status"
+})
+
+# Build the table
+table1 = make_table(renamed_df, categories)
 
 # Format numbers with commas
 table1["n"] = table1["n"].apply(lambda x: f"{x:,}" if isinstance(x, int) else x)
 
 ##### Save results directly to workspace bucket #####
-bucket = os.getenv("WORKSPACE_BUCKET")  # e.g. "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b"
+bucket = os.getenv("WORKSPACE_BUCKET")
 if bucket is None:
     raise ValueError("WORKSPACE_BUCKET environment variable not found. Must run inside a Terra/All of Us notebook.")
 
@@ -44,11 +77,5 @@ gcs_path = f"{bucket}/results/table1_characteristics.csv"
 table1.to_csv(gcs_path, index=False)
 print(f"Saved Table 1 to {gcs_path}")
 
-##### Helper function to reload later #####
-def load_table1(bucket_path=bucket, blob_path="results/table1_characteristics.csv"):
-    full_path = f"{bucket_path}/{blob_path}"
-    return pd.read_csv(full_path)
-
-# Reload example
-table1_reload = load_table1()
-print(table1_reload.head())
+##### Display nicely #####
+display(table1)
