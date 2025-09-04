@@ -7,24 +7,35 @@ import pandas as pd
 from scipy.stats import skew, kurtosis
 from sklearn.preprocessing import StandardScaler
 import hail as hl
+import os
 
-##### Initialize Hail #####
-hl.init()
+# Enable inline plots in Jupyter
+%matplotlib inline
 
-##### Helper function already defined in previous block #####
+##### Helper function #####
 bucket = os.getenv("WORKSPACE_BUCKET")
 if bucket is None:
     raise ValueError("WORKSPACE_BUCKET environment variable not found.")
 
-def save_to_bucket(df=None, fig=None, filename="output.csv"):
+def save_to_bucket(df=None, fig=None, filename="output.csv", show_fig=True):
     local_path = filename
     if df is not None:
         df.to_csv(local_path, index=False)
+        print(f"DataFrame saved locally as {filename}")
+        display(df.head())  # Show first few rows in notebook
     if fig is not None:
         fig.savefig(local_path, bbox_inches='tight')
-        plt.close(fig)
-    !gsutil cp {local_path} {bucket}/{filename}
-    print(f"Saved {filename} to {bucket}")
+        print(f"Figure saved locally as {filename}")
+        if show_fig:
+            display(fig)  # Show figure inline
+    # Upload to cloud bucket
+    os.system(f"gsutil cp {local_path} {bucket}/{filename}")
+    print(f"Uploaded {filename} to {bucket}")
+
+##### Convert all datetime columns to strings for Hail #####
+for col in merged_df.columns:
+    if pd.api.types.is_datetime64_any_dtype(merged_df[col]):
+        merged_df[col] = merged_df[col].astype(str)
 
 ##### Coding Variables #####
 # Binary sex coding
@@ -35,7 +46,7 @@ education_order = {
     "Never Attended": 0, "One Through Four": 0, "Five Through Eight": 0, "Nine Through Eleven": 0,
     "Twelve Or GED": 1, "College One to Three": 2, "College Graduate": 3, "Advanced Degree": 4
 }
-merged_df['education_ord'] = merged_df['Education Level'].map(education_order)
+merged_df['education_ord'] = merged_df['Highest Grade'].map(education_order)
 
 # Employment
 employment_order = {
@@ -49,7 +60,7 @@ marital_order_ord = {
     "Never Married": 0, "Separated": 1, "Divorced": 1, "Widowed": 1,
     "Living With Partner": 2, "Married": 2
 }
-merged_df['marital_ord'] = merged_df['Marital Status'].map(marital_order_ord)
+merged_df['marital_ord'] = merged_df['Current Marital Status'].map(marital_order_ord)
 
 # Scaled variables
 merged_df['education_scaled'] = merged_df['education_ord'] / 4
@@ -79,8 +90,7 @@ for ax, var, title in zip(axes, scaled_vars, titles_scaled):
     ax.set_xlabel('Score')
     ax.set_ylabel('Count')
 plt.tight_layout()
-save_to_bucket(fig=fig, filename="scaled_variables_histograms.png")
-plt.close(fig)
+save_to_bucket(fig=fig, filename="scaled_variables_histograms.png", show_fig=True)
 
 ##### Standardize Z-Scores #####
 scaler = StandardScaler()
@@ -102,8 +112,7 @@ for ax, var, title in zip(axes, std_vars, titles_std):
     ax.set_xlabel('Standardized Score')
     ax.set_ylabel('Count')
 plt.tight_layout()
-save_to_bucket(fig=fig, filename="standardized_variables_histograms.png")
-plt.close(fig)
+save_to_bucket(fig=fig, filename="standardized_variables_histograms.png", show_fig=True)
 
 # Save final dataset with all coded/scaled/z variables
 save_to_bucket(df=merged_df, filename="all_of_us_final_dataset.csv")
@@ -139,3 +148,4 @@ ht_pheno = hl.Table.from_pandas(merged_df, key='person_id')
 # mt = mt.annotate_cols(**ht_pheno[mt.s])
 
 print("Hail Table created. Columns annotated from pandas DataFrame.")
+display(ht_pheno.head(5))  # Show first 5 rows in notebook
