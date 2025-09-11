@@ -91,47 +91,127 @@ os.system(f"gsutil cp aoo_qqplot.png {qqplot_path}")
 plt.close()
 print(f"Saved Q–Q plot to: {qqplot_path}")
 
+#################################
+##### Age of Onset Variable #####
+#################################
 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.stats import skew, kurtosis
+import os
 
+# Ensure bucket exists
+bucket = os.getenv("WORKSPACE_BUCKET")
+if bucket is None:
+    raise ValueError("WORKSPACE_BUCKET environment variable not found.")
 
+##### Create Age of Onset Variable #####
+merged_df['date_of_birth'] = pd.to_datetime(merged_df['date_of_birth'])
+merged_df['condition_start_datetime'] = pd.to_datetime(merged_df['condition_start_datetime'])
 
+# Count before dropping
+before_count = len(merged_df)
 
+merged_df['age_of_onset'] = np.floor(
+    (merged_df['condition_start_datetime'] - merged_df['date_of_birth']).dt.days / 365.25
+).astype('Int64')
 
+# Drop rows missing age of onset
+merged_df = merged_df.dropna(subset=['age_of_onset'])
+after_count = len(merged_df)
+dropped_rows = before_count - after_count
 
+print(f"Total rows before: {before_count}")
+print(f"Total rows after: {after_count}")
+print(f"Dropped rows (missing age_of_onset): {dropped_rows}")
 
+# Save dataset with age_of_onset
+csv_path = f"{bucket}/exports/merged_with_age_of_onset.csv"
+merged_df.to_csv(csv_path, index=False)
+print(f"Saved merged dataset with age_of_onset to: {csv_path}")
 
-##### Tests for normality #####
-from scipy.stats import normaltest, anderson
-import statsmodels.api as sm
+# Display a sample of the updated dataset
+display(merged_df.head(10))
 
-# Parametric test: D'Agostino & Pearson
-dagostino_stat, dagostino_p = normaltest(age_onset_numeric)
+##### Plot histogram #####
+plt.figure(figsize=(10,6))
+plt.hist(merged_df['age_of_onset'], bins=30, color='skyblue', edgecolor='black')
+plt.xlabel('Age of Onset (years)')
+plt.ylabel('Number of Individuals')
+plt.title('Distribution of Age of Onset for MDD')
+plt.show()  # show locally
 
-# Non-parametric test: Anserson-Darling
-anderson_result = anderson(age_onset_numeric)
+hist_path = f"{bucket}/plots/age_of_onset_hist.png"
+plt.savefig("age_of_onset_hist.png")
+os.system(f"gsutil cp age_of_onset_hist.png {hist_path}")
+plt.close()
+print(f"Saved histogram to: {hist_path}")
 
-# Organize results
-aoo_normality_results = {
-    "Test": ["D’Agostino & Pearson", "Anderson–Darling"],
-    "Statistic": [dagostino_stat, anderson_result.statistic],
-    "p_value": [dagostino_p, None],  # AD doesn't give a p-value
-    "Interpretation": [
-        f"Reject H0 (not normal)" if dagostino_p < 0.05 else "Fail to reject H0 (normal)",
-        f"Reject H0 if statistic > critical value (see thresholds below)"
-    ]
-}
+##### Basic stats #####
+age_onset_numeric = merged_df['age_of_onset'].astype(float)
 
-aoo_normality_results_df = pd.DataFrame(aoo_normality_results)
+summary_stats_df = pd.DataFrame({
+    'Mean': [age_onset_numeric.mean()],
+    'Median': [age_onset_numeric.median()],
+    'Std': [age_onset_numeric.std()],
+    'Min': [age_onset_numeric.min()],
+    'Max': [age_onset_numeric.max()],
+    'Skew': [skew(age_onset_numeric, nan_policy="omit")],
+    'Kurtosis': [kurtosis(age_onset_numeric, nan_policy="omit")]
+})
 
-# Save results
-normality_path = f"{bucket}/exports/age_of_onset_normality_tests.csv"
-aoo_normality_results_df.to_csv(normality_path, index=False)
-print(f"Saved normality test results to: {normality_path}")
-
-# Print Anderson-Darling critical values for reference
-print("Anderson–Darling critical values:")
-for cv, sig in zip(anderson_result.critical_values, anderson_result.significance_level):
-    print(f"  {sig}%: {cv:.4f} (Reject if {anderson_result.statistic:.4f} > {cv:.4f})")
+# Save to bucket
+summary_stats_path = f"{bucket}/exports/age_of_onset_summary.csv"
+summary_stats_df.to_csv(summary_stats_path, index=False)
+print(f"Saved summary stats to: {summary_stats_path}")
 
 # Show in notebook
-display(aoo_normality_results_df)
+display(summary_stats_df)
+
+# Q–Q plot
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+sm.qqplot(age_onset_numeric, line='45', fit=True)
+plt.title("Q–Q Plot of Age of Onset")
+plt.show()
+
+# Save QQ plot
+qqplot_path = f"{bucket}/plots/aoo_qqplot.png"
+plt.savefig("aoo_qqplot.png")
+os.system(f"gsutil cp aoo_qqplot.png {qqplot_path}")
+plt.close()
+print(f"Saved Q–Q plot to: {qqplot_path}")
+
+##### Candidate transformations #####
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import boxcox, yeojohnson
+
+aoo = merged_df['age_of_onset'].dropna()
+
+# Ensure positive floats for Box-Cox
+aoo = merged_df['age_of_onset'].dropna().astype(float).to_numpy()
+
+# Canidate transformations
+transformations = {
+    "Original": aoo,
+    "Log": np.log1p(aoo),
+    "Sqrt": np.sqrt(aoo),
+    "Square": np.square(aoo),
+    "Reciprocal": 1 / (aoo + 1),      # avoid div by 0
+    "Box-Cox": boxcox(aoo + 1)[0],    # strictly > 0
+    "Yeo-Johnson": yeojohnson(aoo)[0]
+}
+
+# Plot histograms
+fig, axes = plt.subplots(3, 3, figsize=(15,12))
+axes = axes.flatten()
+
+for i, (name, data) in enumerate(transformations.items()):
+    sns.histplot(data, bins=30, kde=True, ax=axes[i], color="skyblue")
+    axes[i].set_title(name)
+
+plt.tight_layout()
+plt.show()
