@@ -78,6 +78,8 @@ print(f"Saved summary stats to: {summary_stats_path}")
 display(summary_stats_df)
 
 # Q–Q plot
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
 sm.qqplot(age_onset_numeric, line='45', fit=True)
 plt.title("Q–Q Plot of Age of Onset")
 plt.show()
