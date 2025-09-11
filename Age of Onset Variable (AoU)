@@ -76,10 +76,14 @@ print(f"Saved summary stats to: {summary_stats_path}")
 # Show in notebook
 display(summary_stats_df)
 
+# Q–Q plot
+sm.qqplot(age_onset_numeric, line='45', fit=True)
+plt.title("Q–Q Plot of Age of Onset")
+plt.show()
+
 ##### Tests for normality #####
 from scipy.stats import normaltest, anderson
-import pandas as pd
-import os
+import statsmodels.api as sm
 
 # Parametric test: D'Agostino & Pearson
 dagostino_stat, dagostino_p = normaltest(age_onset_numeric)
@@ -87,13 +91,28 @@ dagostino_stat, dagostino_p = normaltest(age_onset_numeric)
 # Non-parametric test: Anserson-Darling
 anderson_result = anderson(age_onset_numeric)
 
-anderson_result = anderson(age_onset_numeric)
-print("Anderson-Darling Test:")
-print(f"  Statistic: {anderson_result.statistic:.4f}")
-for cv, sig in zip(anderson_result.critical_values, anderson_result.significance_level):
-    print(f"  {sig}%: {cv:.4f} (Reject H0 if stat > cv)")
+# Organize results
+aoo_normality_results = {
+    "Test": ["D’Agostino & Pearson", "Anderson–Darling"],
+    "Statistic": [dagostino_stat, anderson_result.statistic],
+    "p_value": [dagostino_p, None],  # AD doesn't give a p-value
+    "Interpretation": [
+        f"Reject H0 (not normal)" if dagostino_p < 0.05 else "Fail to reject H0 (normal)",
+        f"Reject H0 if statistic > critical value (see thresholds below)"
+    ]
+}
 
-# Q–Q plot
-sm.qqplot(age_onset_numeric, line='45', fit=True)
-plt.title("Q–Q Plot of Age of Onset")
-plt.show()
+aoo_normality_results_df = pd.DataFrame(aoo_normality_results)
+
+# Save results
+normality_path = f"{bucket}/exports/age_of_onset_normality_tests.csv"
+aoo_normality_results_df.to_csv(normality_path, index=False)
+print(f"Saved normality test results to: {normality_path}")
+
+# Print Anderson-Darling critical values for reference
+print("Anderson–Darling critical values:")
+for cv, sig in zip(anderson_result.critical_values, anderson_result.significance_level):
+    print(f"  {sig}%: {cv:.4f} (Reject if {anderson_result.statistic:.4f} > {cv:.4f})")
+
+# Show in notebook
+display(aoo_normality_results_df)
