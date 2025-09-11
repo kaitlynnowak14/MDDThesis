@@ -75,3 +75,25 @@ print(f"Saved summary stats to: {summary_stats_path}")
 
 # Show in notebook
 display(summary_stats_df)
+
+##### Tests for normality #####
+from scipy.stats import normaltest, anderson
+import pandas as pd
+import os
+
+# Parametric test: D'Agostino & Pearson
+dagostino_stat, dagostino_p = normaltest(age_onset_numeric)
+
+# Non-parametric test: Anserson-Darling
+anderson_result = anderson(age_onset_numeric)
+
+anderson_result = anderson(age_onset_numeric)
+print("Anderson-Darling Test:")
+print(f"  Statistic: {anderson_result.statistic:.4f}")
+for cv, sig in zip(anderson_result.critical_values, anderson_result.significance_level):
+    print(f"  {sig}%: {cv:.4f} (Reject H0 if stat > cv)")
+
+# Q–Q plot
+sm.qqplot(age_onset_numeric, line='45', fit=True)
+plt.title("Q–Q Plot of Age of Onset")
+plt.show()
