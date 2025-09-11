@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import skew, kurtosis
 import os
+import statsmodels.api as sm
 
 # Ensure bucket exists
 bucket = os.getenv("WORKSPACE_BUCKET")
@@ -80,6 +81,22 @@ display(summary_stats_df)
 sm.qqplot(age_onset_numeric, line='45', fit=True)
 plt.title("Q–Q Plot of Age of Onset")
 plt.show()
+
+# Save QQ plot
+qqplot_path = f"{bucket}/plots/aoo_qqplot.png"
+plt.savefig("aoo_qqplot.png")
+os.system(f"gsutil cp aoo_qqplot.png {qqplot_path}")
+plt.close()
+print(f"Saved Q–Q plot to: {qqplot_path}")
+
+
+
+
+
+
+
+
+
 
 ##### Tests for normality #####
 from scipy.stats import normaltest, anderson
