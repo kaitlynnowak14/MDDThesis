@@ -61,6 +61,29 @@ prs_weights <- top10k_lifted[, c("ID", "EA", "BETA")]
 # Rename EA to A1 for PLINK
 colnames(prs_weights) <- c("SNP", "A1", "BETA")
 
+##### Remove strand-ambiguous SNPs #####
+# Join back to get NEA (other allele)
+prs_with_nea <- merge(prs_weights, 
+                      top10k_lifted[, c("ID", "NEA")], 
+                      by.x = "SNP", by.y = "ID")
+
+# Define ambiguous pairs
+ambiguous <- c("AT","TA","CG","GC")
+
+# Build allele pairs
+allele_pairs <- paste0(prs_with_nea$A1, prs_with_nea$NEA)
+
+# Count how many are ambiguous
+ambiguous_count <- sum(allele_pairs %in% ambiguous)
+message(ambiguous_count, " strand-ambiguous SNPs removed.")
+
+# Keep only non-ambiguous
+prs_weights <- prs_with_nea[!allele_pairs %in% ambiguous, 
+                            c("SNP", "A1", "BETA")]
+
+# Report remaining SNPs
+message(nrow(prs_weights), " SNPs retained in final PRS weights file.")
+
 ##### Save outputs #####
 # Save as tab-delimited text file with no quotes or row names
 write.table(prs_weights, file = "~/Downloads/top10k_prs_weights_hg38.txt",
