@@ -6,14 +6,52 @@ import os
 import hail as hl
 
 ##### Set Environment #####
+# Save bucket path 
 bucket = os.getenv('WORKSPACE_BUCKET')
-genomic_location = os.getenv("CDR_STORAGE_PATH")  # Genomic data bucket
+bucket
 
-if bucket is None or genomic_location is None:
-    raise ValueError("WORKSPACE_BUCKET or CDR_STORAGE_PATH not found. Must run inside a Terra/All of Us notebook.")
+# Save genomic data bucket location
+genomic_location = os.getenv("CDR_STORAGE_PATH")
+genomic_location
 
 ##### Initialize Hail #####
-hl.init(default_reference='GRCh38')
+hl.default_reference(new_default_reference = "GRCh38")
+
+##### Load Array Hail MatrixTable #####
+mt_array_path = os.getenv("MICROARRAY_HAIL_STORAGE_PATH")
+my_array_path
+mt_array_path = "gs://fc-aou-datasets-controlled/v8/microarray/hail.mt"
+mt_array = hl.read_matrix_table(mt_array_path)
+mt_array.count()
+mt_array.describe()
+
+##### Access PLINK BED files #####
+array_plink_path = f'{genomic_location}/microarray/plink'
+array_plink_path
+array_plink_path = 'gs://fc-aou-datasets-controlled/v8/microarray/plink'
+
+# .bim files
+array_bim_path = f'{array_plink_path}/*.bim'
+array_bim_path #columns: chromosome, variant identifier, position, base-pair coordinate, alternative allele, reference allele
+
+!gsutil -u $$GOOGLE_PROJECT cat $array_bim_path | head -n 3
+
+# .fam files
+array_fam_path = f'{array_plink_path}/*.fam'
+array_fam_path #columns: family_id, person_id, father_id, mother_id, sex code, phenotype value
+
+# do not have family or sex information yet, so these columns will be 0 or NA
+
+!gsutil -u $$GOOGLE_PROJECT cat $array_fam_path | head -n 3
+
+# .bed files
+array_bed_path = f'{array_plink_path}/*.bed'
+array_bed_path
+
+
+
+
+
 
 ##### Export Cohort Person IDs #####
 cohort_ids_csv = 'cohort_ids.csv'
@@ -22,12 +60,6 @@ merged_df[['person_id']].to_csv(cohort_ids_csv, index=False)
 # Upload CSV to cloud bucket
 !gsutil cp {cohort_csv} {bucket}/{cohort_csv}
 print(f"Saved cohort IDs to {bucket}/{cohort_csv}")
-
-##### Load Array Hail MatrixTable #####
-mt_array_path = f"{genomic_location}/microarray/hail.mt"
-mt_array = hl.read_matrix_table(mt_array_path)
-print("Original MatrixTable:")
-mt_array.describe()
 
 ##### Filter to Cohort #####
 # Import cohort IDs as Hail table
