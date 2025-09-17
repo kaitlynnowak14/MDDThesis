@@ -147,3 +147,70 @@ print("\nAnderson–Darling Test:")
 print(f"Statistic={anderson_result.statistic:.4f}")
 print("Critical values:", anderson_result.critical_values)
 print("Significance levels:", anderson_result.significance_level)
+
+###########################
+##### Stratify by Sex #####
+###########################
+
+import seaborn as sns
+from scipy.stats import boxcox, yeojohnson
+
+sex_groups = merged_df['sex_at_birth'].unique()  # e.g., ['Male', 'Female']
+
+results = []
+
+for sex in sex_groups:
+    # Subset data for this sex
+    aoo_sex = merged_df.loc[merged_df['sex_at_birth'] == sex, 'age_of_onset'].dropna().astype(float).to_numpy()
+
+    # Plot histogram
+    plt.figure(figsize=(10,6))
+    plt.hist(aoo_sex, bins=30, color='skyblue', edgecolor='black')
+    plt.xlabel('Age of Onset (years)')
+    plt.ylabel('Number of Individuals')
+    plt.title(f'Distribution of Age of Onset for {sex}')
+    plt.show()
+    
+    # Compute summary stats
+    stats = {
+        'Sex': sex,
+        'Mean': aoo_sex.mean(),
+        'Median': aoo_sex.median(),
+        'Std': aoo_sex.std(),
+        'Min': aoo_sex.min(),
+        'Max': aoo_sex.max(),
+        'Skew': skew(aoo_sex, nan_policy='omit'),
+        'Kurtosis': kurtosis(aoo_sex, nan_policy='omit')
+    }
+    
+    results.append(stats)
+
+    # Candidate transformations
+    transformations = {
+        "Original": aoo_sex,
+        "Log": np.log1p(aoo_sex),
+        "Sqrt": np.sqrt(aoo_sex),
+        "Square": np.square(aoo_sex),
+        "Reciprocal": 1 / (aoo_sex + 1),      # avoid div by 0
+        "Box-Cox": boxcox(aoo_sex + 1)[0],    # strictly > 0
+        "Yeo-Johnson": yeojohnson(aoo_sex)[0]
+    }
+    
+    # Plot histograms
+    fig, axes = plt.subplots(3, 3, figsize=(15,12))
+    axes = axes.flatten()
+    
+    for i, (name, data) in enumerate(transformations.items()):
+        sns.histplot(data, bins=30, kde=True, ax=axes[i], color="skyblue")
+        axes[i].set_title(f"{name} ({sex})")
+    
+    # Hide unused subplots
+    for j in range(i+1, len(axes)):
+        axes[j].set_visible(False)
+    
+    plt.tight_layout()
+    plt.show()
+
+# Combine into a DataFrame for easy display
+summary_df = pd.DataFrame(results)
+display(summary_df)
