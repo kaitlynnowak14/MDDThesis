@@ -6,6 +6,8 @@ BiocManager::install(c("rtracklayer", "GenomicRanges"), ask = FALSE)
 
 library(rtracklayer)
 library(GenomicRanges)
+library(readxl)
+library(dplyr)
 
 ##### Load top 10k SNPs file #####
 top10k_SNPs <- read.table('~/Downloads/pgc-mdd2025_top10k_eur_v3-49-24-11.tsv',
@@ -84,6 +86,120 @@ prs_weights <- prs_with_nea[!allele_pairs %in% ambiguous,
 # Report remaining SNPs
 message(nrow(prs_weights), " SNPs retained in final PRS weights file.")
 
+##### Compare with 622 Sig. European SNPs #####
+# Import 622 significant SNPs (GRCh37 build)
+sig_snps <- read_excel('~/Downloads/PRS MDD2025 Top 622 SNPs copy.xlsx')
+sig_snps_sub <- sig_snps[, c("CHR", "BP")]
+colnames(sig_snps_sub) <- c("CHROM", "POS")  # to match top10k file
+
+# Liftover-failed SNPs (compare in GRCh37)
+removed_liftover <- top10k_SNPs[!top10k_SNPs$ID %in% mapped_ids,
+                                c("CHROM","POS","ID")]
+
+# Liftover 622 SNPs to hg38
+sig_gr <- GRanges(seqnames = paste0("chr", sig_snps_sub$CHROM),
+                  ranges = IRanges(start = sig_snps_sub$POS,
+                                   end = sig_snps_sub$POS))
+sig_lifted <- liftOver(sig_gr, chain)
+sig_lifted <- unlist(sig_lifted)
+sig_snps_hg38 <- data.frame(
+  CHROM = gsub("chr", "", seqnames(sig_lifted)),
+  POS   = start(sig_lifted)
+)
+
+##### Build removed SNP sets #####
+removed_duplicates <- top10k_SNPs[top10k_SNPs$ID %in% dup_ids,
+                                  c("CHROM","POS","ID")]
+removed_ambiguous <- top10k_lifted[top10k_lifted$ID %in%
+                                     prs_with_nea$SNP[allele_pairs %in% ambiguous],
+                                   c("CHROM","POS","ID")]
+
+##### Standardize column types #####
+fix_types <- function(df) {
+  df$CHROM <- as.character(df$CHROM)
+  df$POS   <- as.numeric(df$POS)
+  return(df)
+}
+removed_liftover   <- fix_types(removed_liftover)
+removed_duplicates <- fix_types(removed_duplicates)
+removed_ambiguous  <- fix_types(removed_ambiguous)
+sig_snps_sub       <- fix_types(sig_snps_sub)
+sig_snps_hg38      <- fix_types(sig_snps_hg38)
+
+##### Overlaps #####
+# Liftover fails checked against GRCh37 sig SNPs
+overlap_liftover <- inner_join(removed_liftover, sig_snps_sub,
+                               by = c("CHROM","POS"))
+
+# Duplicates & ambiguous checked against GRCh38 sig SNPs
+overlap_duplicates <- inner_join(removed_duplicates, sig_snps_hg38,
+                                 by = c("CHROM","POS"))
+overlap_ambiguous <- inner_join(removed_ambiguous, sig_snps_hg38,
+                                by = c("CHROM","POS"))
+
+cat("Lost in liftover (GRCh37):", nrow(overlap_liftover), "\n")
+cat("Lost as duplicates (hg38):", nrow(overlap_duplicates), "\n")
+cat("Lost as strand-ambiguous (hg38):", nrow(overlap_ambiguous), "\n")
+
+##### Combine all overlaps #####
+overlap_removed <- bind_rows(
+  mutate(overlap_liftover, Step = "liftover_failed"),
+  mutate(overlap_duplicates, Step = "duplicates"),
+  mutate(overlap_ambiguous, Step = "strand_ambiguous")
+)
+
+message(nrow(overlap_removed), " significant SNPs were removed in total.")
+print(overlap_removed)
+
+##### Effect sizes of removed vs retain significant SNPs #####
+removed_liftover_beta <- merge(
+  overlap_removed %>% filter(Step == "liftover_failed"),
+  top10k_SNPs[, c("CHROM","POS","BETA")],
+  by = c("CHROM","POS"),
+  all.x = TRUE
+)
+
+# Duplicates & strand-ambiguous: from hg38 lifted file
+removed_duplicates_beta <- merge(
+  overlap_removed %>% filter(Step == "duplicates"),
+  top10k_lifted[, c("CHROM","POS","BETA")],
+  by = c("CHROM","POS"),
+  all.x = TRUE
+)
+removed_ambiguous_beta <- merge(
+  overlap_removed %>% filter(Step == "strand_ambiguous"),
+  top10k_lifted[, c("CHROM","POS","BETA")],
+  by = c("CHROM","POS"),
+  all.x = TRUE
+)
+
+# Combine all removed SNPs with BETA
+removed_sig_snps <- bind_rows(
+  removed_liftover_beta,
+  removed_duplicates_beta,
+  removed_ambiguous_beta
+)
+
+##### Retained significant SNPs (hg38) #####
+retained_sig_snps <- merge(
+  top10k_lifted[, c("CHROM","POS","ID","BETA")],
+  sig_snps_hg38[, c("CHROM","POS")],
+  by = c("CHROM","POS")
+)
+
+##### Summarize BETA values #####
+cat("Effect sizes of removed significant SNPs:\n")
+print(summary(removed_sig_snps$BETA))
+
+cat("\nEffect sizes of retained significant SNPs:\n")
+print(summary(retained_sig_snps$BETA))
+
+# Optional: boxplot
+boxplot(removed_sig_snps$BETA, retained_sig_snps$BETA,
+        names = c("Removed", "Retained"),
+        main = "Comparison of BETA values for significant SNPs",
+        ylab = "BETA (effect size)")
+
 ##### Save outputs #####
 # Save as tab-delimited text file with no quotes or row names
 write.table(prs_weights, file = "~/Downloads/top10k_prs_weights_hg38.txt",
@@ -92,4 +208,13 @@ write.table(prs_weights, file = "~/Downloads/top10k_prs_weights_hg38.txt",
 # Save full lifted file
 write.table(top10k_lifted,
             file = "~/Downloads/top10k_full_lifted_hg38.txt",
+            sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+
+# Save removed significant SNPs
+write.table(overlap_removed,
+            file = "~/Downloads/removed_sig_snps_by_step.txt",
+            sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+
+# Save retained significant SNPs
+write.table(retained_sig_snps, file = "~/Downloads/retained_sig_snps.txt",
             sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
