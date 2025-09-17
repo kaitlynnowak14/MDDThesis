@@ -170,7 +170,12 @@ for sex in sex_groups:
     plt.ylabel('Number of Individuals')
     plt.title(f'Distribution of Age of Onset for {sex}')
     plt.show()
-    
+
+    # QQ plot of original distribution
+    sm.qqplot(aoo_sex, line='45', fit=True)
+    plt.title(f"QQ Plot of Age of Onset ({sex}, Original)")
+    plt.show()
+
     # Compute summary stats
     stats = {
         'Sex': sex,
