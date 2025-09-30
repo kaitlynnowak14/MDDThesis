@@ -1,13 +1,18 @@
 ## In R on local computer##
 
 ##### Install packages if needed #####
-if (!require("BiocManager")) install.packages("BiocManager")
-BiocManager::install(c("rtracklayer", "GenomicRanges"), ask = FALSE)
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
 
-library(rtracklayer)
+# Install packages if needed
+BiocManager::install(c("GenomicRanges", "rtracklayer", "BSgenome.Hsapiens.UCSC.hg38"), ask = FALSE)
+
+# Load packages
 library(GenomicRanges)
-library(readxl)
+library(rtracklayer)
+library(BSgenome.Hsapiens.UCSC.hg38)
 library(dplyr)
+library(readxl)
 
 ##### Load top 10k SNPs file #####
 top10k_SNPs <- read.table('~/Downloads/pgc-mdd2025_top10k_eur_v3-49-24-11.tsv',
@@ -199,6 +204,35 @@ boxplot(removed_sig_snps$BETA, retained_sig_snps$BETA,
         names = c("Removed", "Retained"),
         main = "Comparison of BETA values for significant SNPs",
         ylab = "BETA (effect size)")
+
+##### Harmonize to hg38 forward strand #####
+fetch_ref <- function(chr, pos) {
+  seqname <- paste0("chr", chr)
+  if (!seqname %in% seqnames(BSgenome.Hsapiens.UCSC.hg38)) return(NA_character_)
+  as.character(BSgenome.Hsapiens.UCSC.hg38[[seqname]][pos])
+}
+
+top10k_lifted$REF <- toupper(mapply(fetch_ref, top10k_lifted$CHROM, top10k_lifted$POS, USE.NAMES = FALSE))
+
+is_palindromic <- function(a1, a2) {
+  paste0(a1, a2) %in% c("AT","TA","CG","GC")
+}
+
+palindromic <- is_palindromic(top10k_lifted$EA, top10k_lifted$NEA)
+cat(sum(palindromic), "palindromic SNPs removed during harmonization\n")
+top10k_lifted <- top10k_lifted[!palindromic, ]
+
+flip <- top10k_lifted$EA != top10k_lifted$REF
+cat(sum(flip), "SNPs flipped to match forward strand\n")
+
+top10k_lifted$BETA[flip] <- -top10k_lifted$BETA[flip]
+tmp <- top10k_lifted$EA[flip]
+top10k_lifted$EA[flip] <- top10k_lifted$NEA[flip]
+top10k_lifted$NEA[flip] <- tmp
+
+prs_weights <- top10k_lifted[, c("ID", "EA", "BETA")]
+colnames(prs_weights) <- c("SNP", "A1", "BETA")
+cat(nrow(prs_weights), "SNPs retained in harmonized PRS weights file\n")
 
 ##### Save outputs #####
 # Save as tab-delimited text file with no quotes or row names
