@@ -218,7 +218,7 @@ dataset_39593556_person_df = pandas.read_gbq(
 
 dataset_39593556_person_df.head(5)
 
-######################################################################################
+#####################################################################################
 
 ##### Begin Pulling Genomic Data #####
 import os
@@ -269,16 +269,6 @@ array_bed_path
 
 
 
-
-
-
-
-##### Rename Alleles for PLINK Compatibility #####
-mt_array_filtered = mt_array_filtered.annotate_rows(
-    A1 = mt_array_filtered.alleles[0],  # Effect allele (EA)
-    A2 = mt_array_filtered.alleles[1]   # Non-effect allele (NEA)
-)
-print("Alleles renamed for PLINK export.")
 
 ##### Save Filtered MatrixTable #####
 filtered_mt_path = f"{bucket}/filtered_mt/filtered_cohort.mt"
