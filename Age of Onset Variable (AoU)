@@ -170,23 +170,23 @@ for sex in sex_groups:
     plt.ylabel('Number of Individuals')
     plt.title(f'Distribution of Age of Onset for {sex}')
     plt.show()
-
+    
     # QQ plot of original distribution
     sm.qqplot(aoo_sex, line='45', fit=True)
     plt.title(f"QQ Plot of Age of Onset ({sex}, Original)")
     plt.show()
-
+    
     # Compute summary stats
     stats = {
-        'Sex': sex,
-        'Mean': aoo_sex.mean(),
-        'Median': aoo_sex.median(),
-        'Std': aoo_sex.std(),
-        'Min': aoo_sex.min(),
-        'Max': aoo_sex.max(),
-        'Skew': skew(aoo_sex, nan_policy='omit'),
-        'Kurtosis': kurtosis(aoo_sex, nan_policy='omit')
-    }
+    'Sex': sex,
+    'Mean': np.mean(aoo_sex),
+    'Median': np.median(aoo_sex),
+    'Std': np.std(aoo_sex, ddof=1),  # sample standard deviation
+    'Min': np.min(aoo_sex),
+    'Max': np.max(aoo_sex),
+    'Skew': skew(aoo_sex, nan_policy='omit'),
+    'Kurtosis': kurtosis(aoo_sex, nan_policy='omit')
+}
     
     results.append(stats)
 
