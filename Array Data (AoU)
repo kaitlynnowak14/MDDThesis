@@ -5,6 +5,9 @@
 ##### Uploading Cohort + Subject IDs #####
 import pandas
 import os
+from datetime import datetime
+
+start = datetime.now()
 
 # This query represents dataset "Genomics Pull" for domain "person" and was generated for All of Us Controlled Tier Dataset v8
 dataset_84256769_person_sql = """
@@ -220,6 +223,16 @@ dataset_84256769_person_df.head(5)
 
 #######################################################################################
 
+##### Convert pandas table to tsv #####
+# Save person IDs as strings
+dataset_84256769_person_df["person_id"] = dataset_84256769_person_df["person_id"].astype(str)
+
+# Save data frame as a tsv to workspace bucket
+workspace_bucket = os.environ['WORKSPACE_BUCKET']
+
+dataset_84256769_person_df.to_csv('mdd_thesis_cohort.tsv', index=False, sep='\t')
+!gsutil cp 'mdd_thesis_cohort.tsv' {workspace_bucket}/data/
+!gsutil ls {workspace_bucket}/data
 
 #######################################################################################
 
@@ -229,8 +242,7 @@ dataset_84256769_person_df.head(5)
     # Select reasonable defaults for CPU, RAM, disk and numbers of workers
     # Click on Next
 
-###### Setup #####
-from datetime import datetime
+###### Setup Hail #####
 import os
 import hail as hl
 
@@ -253,28 +265,26 @@ mt_array = hl.read_matrix_table(mt_array_path)
 mt_array.count()
 mt_array.describe()
 
+##### Filter Participants #####
+mdd_thesis_dataset = "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/mdd_thesis_cohort.tsv"
 
+mdd_thesis_mt = (hl.import_table(mdd_thesis_dataset,
+                              types={'person_id':hl.tstr},
+                              key='person_id')
+             )
+
+array_data_mt = mt_array.semi_join_cols(mdd_thesis_mt)
+array_data_mt.count()
+
+# Save to workspace bucket
+array_data_mt.write('gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/array_data.mt')
+
+# Can now use in the future
+!gsutil ls gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/
 
 ##### Access PLINK BED files #####
-array_plink_path = f'{genomic_location}/microarray/plink'
-array_plink_path
-array_plink_path = 'gs://fc-aou-datasets-controlled/v8/microarray/plink'
+hl.export_plink(array_data_mt, 'gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/array_data.mt', row_key='locus')
 
-# .bim files
-array_bim_path = f'{array_plink_path}/*.bim'
-array_bim_path #columns: chromosome, variant identifier, position, base-pair coordinate, alternative allele, reference allele
-
-!gsutil -u $$GOOGLE_PROJECT cat $array_bim_path | head -n 3
-
-# .fam files
-array_fam_path = f'{array_plink_path}/*.fam'
-array_fam_path #columns: family_id, person_id, father_id, mother_id, sex code, phenotype value
-
-# do not have family or sex information yet, so these columns will be 0 or NA
-
-!gsutil -u $$GOOGLE_PROJECT cat $array_fam_path | head -n 3
-
-# .bed files
-array_bed_path = f'{array_plink_path}/*.bed'
-array_bed_path
-
+##### Conclusion #####
+stop = datetime.now()
+print(str(stop-start))
