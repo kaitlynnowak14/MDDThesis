@@ -10,9 +10,9 @@ import tensorflow as tf
 import time
 
 #---[ Change this to be the name of the notebook in the current working directory that you wish to run. ]-----------
-NOTEBOOK_TO_RUN = 'MDD Thesis.ipynb'
+NOTEBOOK_TO_RUN = 'Array Data.ipynb'
 
-#---[ Change the following to 'Python' if you have a Python notebook, or to 'R' if you have an R notebook.
+#---[ Change the following to 'Python' if you have a Python notebook, or to 'R' if you have an R notebook. ]---------
 KERNEL = 'Python'
 
 ##### Set Output Paths #####
