@@ -218,9 +218,19 @@ dataset_84256769_person_df = pandas.read_gbq(
 
 dataset_84256769_person_df.head(5)
 
-#####################################################################################
+#######################################################################################
 
-##### Begin Pulling Genomic Data #####
+
+#######################################################################################
+
+##### Before you start running this notebook, make sure you are using a Dataproc runtime. To do so, #####
+    # Click on the Jupyter icon on the right hand side of the screen
+    # Inside Recommended environments, select Hail Genomics Analysis, which creates the computer type Dataproc Cluster
+    # Select reasonable defaults for CPU, RAM, disk and numbers of workers
+    # Click on Next
+
+###### Setup #####
+from datetime import datetime
 import os
 import hail as hl
 
@@ -238,11 +248,12 @@ hl.default_reference(new_default_reference = "GRCh38")
 
 ##### Load Array Hail MatrixTable #####
 mt_array_path = os.getenv("MICROARRAY_HAIL_STORAGE_PATH")
-my_array_path
 mt_array_path = "gs://fc-aou-datasets-controlled/v8/microarray/hail.mt"
 mt_array = hl.read_matrix_table(mt_array_path)
 mt_array.count()
 mt_array.describe()
+
+
 
 ##### Access PLINK BED files #####
 array_plink_path = f'{genomic_location}/microarray/plink'
@@ -267,15 +278,3 @@ array_fam_path #columns: family_id, person_id, father_id, mother_id, sex code, p
 array_bed_path = f'{array_plink_path}/*.bed'
 array_bed_path
 
-
-
-
-##### Save Filtered MatrixTable #####
-filtered_mt_path = f"{bucket}/filtered_mt/filtered_cohort.mt"
-mt_array_filtered.write(filtered_mt_path, overwrite=True)
-print(f"Filtered MatrixTable saved to {filtered_mt_path}")
-
-##### Export Filtered MatrixTable to PLINK #####
-plink_prefix = f"{bucket}/prs_plink/filtered_cohort"
-hl.export_plink(mt_array_filtered, output=plink_prefix)
-print(f"PLINK files exported with prefix: {plink_prefix}")
