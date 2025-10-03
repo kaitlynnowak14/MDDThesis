@@ -1,13 +1,13 @@
-##################################
-##### Preparing Genomic Data #####
-##################################
+################################
+##### Preparing Array Data #####
+################################
 
 ##### Uploading Cohort + Subject IDs #####
 import pandas
 import os
 
 # This query represents dataset "Genomics Pull" for domain "person" and was generated for All of Us Controlled Tier Dataset v8
-dataset_39593556_person_sql = """
+dataset_84256769_person_sql = """
     SELECT
         person.person_id 
     FROM
@@ -210,13 +210,13 @@ dataset_39593556_person_sql = """
                     AND is_standard = 0  
                     AND  value_source_concept_id IN (903096))) criteria ) )"""
 
-dataset_39593556_person_df = pandas.read_gbq(
-    dataset_39593556_person_sql,
+dataset_84256769_person_df = pandas.read_gbq(
+    dataset_84256769_person_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_39593556_person_df.head(5)
+dataset_84256769_person_df.head(5)
 
 #####################################################################################
 
