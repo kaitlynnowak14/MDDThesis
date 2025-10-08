@@ -266,24 +266,24 @@ mt_array.count()
 mt_array.describe()
 
 ##### Filter Participants #####
-mdd_thesis_dataset = "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/mdd_thesis_cohort.tsv"
+mdd_array_dataset = "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/mdd_thesis_cohort.tsv"
 
-mdd_thesis_mt = (hl.import_table(mdd_thesis_dataset,
+mdd_array_mt = (hl.import_table(mdd_array_dataset,
                               types={'person_id':hl.tstr},
                               key='person_id')
              )
 
-array_data_mt = mt_array.semi_join_cols(mdd_thesis_mt)
+array_data_mt = mt_array.semi_join_cols(mdd_array_mt)
 array_data_mt.count()
 
 # Save to workspace bucket
-array_data_mt.write('gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/array_data.mt')
+array_data_mt.write('gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/array_data.mt', overwrite=True)
 
 # Can now use in the future
 !gsutil ls gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/
 
 ##### Access PLINK BED files #####
-hl.export_plink(array_data_mt, 'gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/array_data.mt', row_key='locus')
+hl.export_plink(array_data_mt, 'gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/array_data_plink', row_key='locus')
 
 ##### Conclusion #####
 stop = datetime.now()
