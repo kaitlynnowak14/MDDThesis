@@ -282,9 +282,57 @@ array_data_mt.write('gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/ar
 # Can now use in the future
 !gsutil ls gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/
 
-##### Access PLINK BED files #####
-hl.export_plink(array_data_mt, 'gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/array_data_plink', row_key='locus')
-
 ##### Conclusion #####
 stop = datetime.now()
 print(str(stop-start))
+
+###########################################################################################################################
+
+##############################
+##### Access PLINK files #####
+##############################
+
+# Setup Hail
+import os
+import hail as hl
+
+# Setup paths
+genomic_location = os.getenv("CDR_STORAGE_PATH")
+genomic_location
+
+bucket = os.getenv('WORKSPACE_BUCKET')
+bucket
+
+# Load the filtered MatrixTable
+array_data_mt_path = 'gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/array_data.mt'
+array_data_mt = hl.read_matrix_table(array_data_mt_path)
+
+# Set output files path
+out_path = f'{bucket}/data/array_data_plink'
+
+# Export function
+hl.export_plink(array_data_mt, out_path, ind_id = array_data_mt.s)
+
+# Verify output files exists
+!gsutil ls {bucket}/data/
+
+# Verify participant number in .fam file as 1 row per individual
+!gsutil cat {out_path}.fam | wc -l
+
+#################################
+
+##### Look at top 5 from each file #####
+# First 5 column sample IDs (participants)
+array_data_mt.s.show(5)
+
+# First 5 rows (variants)
+array_data_mt.rows().show(5)
+
+# Top 5 lines of .fam (participants)
+!gsutil cat {out_path}.fam | head -n 5
+
+# Top 5 lines of .bim (variant metadata)
+!gsutil cat {out_path}.bim | head -n 5
+
+# Confirm .bed presence and size because binary
+!gsutil ls -l {out_path}.bed
