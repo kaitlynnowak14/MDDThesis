@@ -1,0 +1,31 @@
+##### AoU Array Data QC #####
+
+
+
+
+
+
+
+
+
+##### Sensitivity Analysis #####
+# First upload weights file to cloud
+
+# Import hail
+import hail as hl
+
+# Load hail matrix table
+mt = hl.read_matric_table('gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/array_data.mt')
+
+# Load PRS weights file
+weights = hl.import_table('gs://your-bucket/prs_weights_clean.txt', impute=True, delimiter='\t')
+
+# Make sure SNP IDs match the format in your .mt (e.g., rsIDs)
+weights = weights.key_by('SNP')
+
+# Annotate mt with weights info
+mt = mt.annotate_rows(prs = weights[mt.row_key])
+
+# Compute allele frequencies
+mt = hl.variant_qc(mt)
+freq_table = mt.rows().select('variant_qc').flatten()
