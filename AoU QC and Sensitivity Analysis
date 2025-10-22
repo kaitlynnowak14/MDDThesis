@@ -1,10 +1,107 @@
 ##### AoU Array Data QC #####
 
+# Set up
+import os
+import pandas as pd
+import numpy as np
+
+# Set bucket location
+bucket = "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/"
+
+# Get PLINK files & copy them locally
+plink_files = ["array_data_plink.bed", "array_data_plink.bim", "array_data_plink.fam"]
+
+for f in plink_files:
+    !gsutil cp {bucket+f} .
+
+# Basic SNP QC (MAF > 0.05)
+!plink --bfile array_data_plink \
+       --maf 0.05 \
+       --make-bed \
+       --out allofus_qc_step1
+
+#===============================================================================
+import pandas as pd
+import numpy as np
+
+genome_file = "allofus_qc_relatedness.genome"
+remove_file = "allofus_qc_related_remove.txt"
+chunksize = 500_000
+
+remove_ids = set()
+seen_pairs = set()
+
+np.random.seed(42)  # optional: reproducibility
+
+print("Scanning relatedness file in chunks...")
+for i, chunk in enumerate(pd.read_csv(
+    genome_file,
+    delim_whitespace=True,
+    usecols=["IID1", "IID2", "PI_HAT"],
+    chunksize=chunksize,
+    engine="python"
+)):
+    rel = chunk[chunk["PI_HAT"] > 0.2]
+    for _, row in rel.iterrows():
+        # create a unique key for the pair (order-independent)
+        pair_key = tuple(sorted([row["IID1"], row["IID2"]]))
+        if pair_key in seen_pairs:
+            continue
+        seen_pairs.add(pair_key)
+
+        # Randomly pick one IID to remove
+        to_remove = np.random.choice([row["IID1"], row["IID2"]])
+        remove_ids.add(("0", int(to_remove)))  # 👈 force FID = "0" and convert IID to int
+
+    print(f"  Processed chunk {i+1}: {len(rel)} related pairs, total unique IDs so far = {len(remove_ids)}")
+
+# Save list of individuals to remove (FID IID), tab-separated
+remove_df = pd.DataFrame(list(remove_ids), columns=["FID", "IID"])
+remove_df.to_csv(remove_file, sep="\t", index=False, header=False)
+
+print(f"\n✅ Saved {len(remove_df)} individuals (one per pair) to {remove_file}")
+
+# 🔹 Run PLINK to remove related individuals
+!plink --bfile allofus_qc_step1 \
+       --remove {remove_file} \
+       --make-bed \
+       --out allofus_qc_final
+
+# Save all QC-related files back to the bucket
+qc_files = [
+    "allofus_qc_step1.bed", "allofus_qc_step1.bim", "allofus_qc_step1.fam",
+    "allofus_qc_relatedness.genome", remove_file,
+    "allofus_qc_final.bed", "allofus_qc_final.bim", "allofus_qc_final.fam"
+]
+
+print("\nUploading QC files back to bucket...")
+for f in qc_files:
+    !gsutil cp {f} {bucket}
+print("✅ Upload complete!")
+
+#==================================================
 
 
 
 
 
+
+
+
+
+
+##### Harmonize alleles & check overlapping SNPs (PLINK) #####
+# Extract rsIDs from weights file
+awk 'NR>1 {print $3}' top10k_lifted_weights_hg38.txt > top10k_snps.txt
+
+# Extract SNP IDs from PLINK .bim
+awk '{print $2}' cohort.bim > cohort_snps.txt
+
+# Find overlapping SNPs
+comm -12 <(sort top10k_snps.txt) <(sort cohort_snps.txt) > overlapping_snps.txt
+
+# Count
+wc -l overlapping_snps.txt
 
 
 
