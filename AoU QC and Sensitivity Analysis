@@ -61,7 +61,7 @@ remove_df.to_csv(remove_file, sep="\t", index=False, header=False)
 
 print(f"\n✅ Saved {len(remove_df)} individuals (one per pair) to {remove_file}")
 
-# 🔹 Run PLINK to remove related individuals
+# Run PLINK to remove related individuals
 !plink --bfile allofus_qc_step1 \
        --remove {remove_file} \
        --make-bed \
@@ -79,50 +79,164 @@ for f in qc_files:
     !gsutil cp {f} {bucket}
 print("✅ Upload complete!")
 
-#==================================================
+#=========================================================================================
 
+##### Compare weights and target .bim and produce keep/flip/palindromic lists ######
 
+# 1. Make SNP list from weights (skip header)
+!tail -n +2 top10k_prs_weights_hg38.txt | cut -f3 > prs_snplist.txt
+!wc -l prs_snplist.txt
 
+# 2. Extract rsIDs from bim (column 2 is rsID)
+!awk '{print $2}' allofus_qc_final.bim > bim_snplist.txt
 
+# 3. Intersect (present)
+!grep -F -x -f prs_snplist.txt bim_snplist.txt > prs_snps_present_in_bim.txt
+!wc -l prs_snps_present_in_bim.txt
 
+# 4. Missing (in weights but not in target)
+!grep -F -x -v -f bim_snplist.txt prs_snplist.txt > prs_snps_missing_in_target.txt
+!wc -l prs_snps_missing_in_target.txt
 
+# Quick summary
+!echo "TOTAL weights SNPs: $(wc -l < prs_snplist.txt)"
+!echo "PRESENT in target: $(wc -l < prs_snps_present_in_bim.txt)"
+!echo "MISSING in target: $(wc -l < prs_snps_missing_in_target.txt)"
 
+##### Extract overlapping variants to a PLINK subset #####
+!plink --bfile allofus_qc_final \
+      --extract prs_snps_present_in_bim.txt \
+      --make-bed \
+      --out prs_target_snps
 
+# ======================================================================================================
 
+##### Create a merged table and harmonize calls #####
+#!/usr/bin/env python3
+import pandas as pd
+import numpy as np
 
-##### Harmonize alleles & check overlapping SNPs (PLINK) #####
-# Extract rsIDs from weights file
-awk 'NR>1 {print $3}' top10k_lifted_weights_hg38.txt > top10k_snps.txt
+# Filenames (edit if needed)
+weights_f = "top10k_prs_weights_hg38.txt"
+bim_f = "allofus_qc_final.bim"
 
-# Extract SNP IDs from PLINK .bim
-awk '{print $2}' cohort.bim > cohort_snps.txt
+# Load weights
+w = pd.read_csv(weights_f, sep="\t", dtype=str)
+# Ensure required columns exist
+req = ["CHROM","POS","ID","EA","NEA","BETA"]
+for c in req:
+    if c not in w.columns:
+        raise SystemExit(f"Missing column {c} in weights file. Found columns: {w.columns.tolist()}")
 
-# Find overlapping SNPs
-comm -12 <(sort top10k_snps.txt) <(sort cohort_snps.txt) > overlapping_snps.txt
+w['BETA'] = pd.to_numeric(w['BETA'], errors='coerce')
+w = w[['CHR' if 'CHR' in w.columns else 'CHROM','POS','ID','EA','NEA','BETA']].rename(columns={'CHR':'CHROM'})
 
-# Count
-wc -l overlapping_snps.txt
+# Load bim
+# PLINK .bim columns: 1:chr 2:rsid 3:cm 4:pos 5:allele1(A1) 6:allele2(A2)
+bim = pd.read_csv(bim_f, sep="\s+", header=None, dtype=str)
+bim.columns = ['CHR','ID','CM','POS','A1','A2']
 
+# Uppercase alleles
+for col in ['EA','NEA','A1','A2']:
+    if col in w.columns:
+        w[col] = w[col].str.upper()
+bim['A1'] = bim['A1'].str.upper()
+bim['A2'] = bim['A2'].str.upper()
+w['EA'] = w['EA'].str.upper()
+w['NEA'] = w['NEA'].str.upper()
 
+# Merge by ID
+m = pd.merge(w, bim, on='ID', suffixes=('_w','_t'), how='inner')
 
-##### Sensitivity Analysis #####
-# First upload weights file to cloud
+print(f"Merged {len(m)} SNPs present in both weights and target (by ID).")
 
-# Import hail
-import hail as hl
+# complement map
+comp_map = {'A':'T','T':'A','C':'G','G':'C'}
+def complement(allele):
+    if pd.isna(allele): return allele
+    return ''.join(comp_map.get(b,b) for b in allele)
 
-# Load hail matrix table
-mt = hl.read_matric_table('gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/array_data.mt')
+def classify(row):
+    ea = row['EA']
+    nea = row['NEA']
+    a1 = row['A1']
+    a2 = row['A2']
+    # exact match
+    if ea == a1 and nea == a2:
+        return 'match', False
+    if ea == a2 and nea == a1:
+        return 'swap', True
+    # complement (strand flip)
+    cea = complement(ea)
+    cnea = complement(nea)
+    if cea == a1 and cnea == a2:
+        return 'strand_match', False
+    if cea == a2 and cnea == a1:
+        return 'strand_swap', True
+    # ambiguous palindromic
+    allele_set = {ea, nea}
+    if allele_set == {'A','T'} or allele_set == {'T','A'} or allele_set == {'G','C'} or allele_set == {'C','G'}:
+        return 'ambiguous', None
+    return 'mismatch', None
 
-# Load PRS weights file
-weights = hl.import_table('gs://your-bucket/prs_weights_clean.txt', impute=True, delimiter='\t')
+res = m.apply(lambda r: pd.Series(classify(r), index=['class','flip']), axis=1)
+m = pd.concat([m, res], axis=1)
 
-# Make sure SNP IDs match the format in your .mt (e.g., rsIDs)
-weights = weights.key_by('SNP')
+# Flip BETA if needed
+def flip_beta(beta, flip):
+    if pd.isna(beta): return beta
+    if flip:
+        return -beta
+    return beta
 
-# Annotate mt with weights info
-mt = mt.annotate_rows(prs = weights[mt.row_key])
+m['BETA_harmonized'] = m.apply(lambda r: flip_beta(r['BETA'], r['flip'] == True), axis=1)
 
-# Compute allele frequencies
-mt = hl.variant_qc(mt)
-freq_table = mt.rows().select('variant_qc').flatten()
+# Write harmonized scoring file for SNPs we can confidently align (match, swap, strand_match, strand_swap)
+ok_classes = ['match','swap','strand_match','strand_swap']
+harm = m[m['class'].isin(ok_classes)].copy()
+# PLINK score format: SNP A1 BETA (SNP ID, effect allele, weight)
+# We will make first allele = EA (effect allele) and BETA adjusted already
+harm[['ID','EA','BETA_harmonized']].to_csv("harmonized_weights_for_scoring.tsv", sep="\t", index=False, header=False)
+
+# Write category lists
+m[m['class']=='match']['ID'].to_csv("snps_match.txt", index=False, header=False)
+m[m['class']=='swap']['ID'].to_csv("snps_swap.txt", index=False, header=False)
+m[m['class'].str.contains('strand')]['ID'].to_csv("snps_strandflip.txt", index=False, header=False)
+m[m['class']=='ambiguous']['ID'].to_csv("snps_ambiguous.txt", index=False, header=False)
+m[m['class']=='mismatch']['ID'].to_csv("snps_mismatch.txt", index=False, header=False)
+
+# Full per-SNP report
+m_report = m[['ID','CHROM_w','POS_w','EA','NEA','BETA','CHR','POS','A1','A2','class','flip','BETA_harmonized']].copy()
+m_report.columns = ['ID','CHR_weights','POS_weights','EA','NEA','BETA_weights','CHR_target','POS_target','A1_target','A2_target','class','flip','BETA_harmonized']
+m_report.to_csv("harmonization_report.tsv", sep="\t", index=False)
+
+# Summary counts
+summary = m['class'].value_counts()
+print("\nSummary:")
+print(summary.to_string())
+
+print("\nOutputs written:")
+print(" - harmonized_weights_for_scoring.tsv   (SNP EA BETA)")
+print(" - harmonization_report.tsv             (detailed per-SNP info)")
+print(" - snps_match.txt, snps_swap.txt, snps_strandflip.txt, snps_ambiguous.txt, snps_mismatch.txt")
+
+# Make script executable and run
+!chmod +x harmonize_snps.py
+!python3 harmonize_snps.py
+
+##### Inspect results #####
+# 1. basic counts to inspect quickly
+!head -n 5 harmonization_report.tsv
+!wc -l snps_ambiguous.txt snps_mismatch.txt snps_strandflip.txt snps_match.txt snps_swap.txt
+
+# 2. run PRS with harmonized file (all confidently aligned SNPs)
+!plink --bfile allofus_qc_final \
+      --score harmonized_weights_for_scoring.tsv 1 2 3 header \
+      --out prs_harmonized
+
+# ===============================================================================================================
+
+##### Run strand-ambiguous concordance sensitivity #####
+
+# Produce allofus_target_freq_counts.frq.count with columns: CHR SNP A1 A2 COUNT_A1 COUNT_A2
+plink --bfile allofus_qc_final --freq counts --out allofus_target_freq_counts
