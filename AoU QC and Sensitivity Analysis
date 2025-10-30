@@ -83,6 +83,10 @@ print("✅ Upload complete!")
 
 ##### Compare weights and target .bim and produce keep/flip/palindromic lists ######
 
+# Pull files
+!gsutil cp gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/allofus_qc_final.bim
+!gsutil cp gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/top10k_prs_weights_hg38.txt
+
 # 1. Make SNP list from weights (skip header)
 !tail -n +2 top10k_prs_weights_hg38.txt | cut -f3 > prs_snplist.txt
 !wc -l prs_snplist.txt
@@ -116,7 +120,7 @@ print("✅ Upload complete!")
 import pandas as pd
 import numpy as np
 
-# Filenames (edit if needed)
+# Filenames
 weights_f = "top10k_prs_weights_hg38.txt"
 bim_f = "allofus_qc_final.bim"
 
