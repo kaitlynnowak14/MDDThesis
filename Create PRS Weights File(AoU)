@@ -33,7 +33,6 @@ colnames(topMA_SNPs) <- c("Locus.Index", "SNP.Index", "SNP", "CHR", "BP", "A1", 
 topMA_before <- topMA_SNPs
 
 ##### 3. Liftover GRCh37 -> GRCh38 (hg19 -> hg38) #####
-
 # Fix sex chromosome coding
 topMA_SNPs$CHR[topMA_SNPs$CHR == 23] <- "X"
 topMA_SNPs$CHR[topMA_SNPs$CHR == 24] <- "Y"   # if present
@@ -42,7 +41,7 @@ topMA_SNPs$CHR[topMA_SNPs$CHR == 24] <- "Y"   # if present
 topMA_SNPs$CHR <- paste0("chr", topMA_SNPs$CHR)
 
 # Create GRanges object for GRCh37
-gr37 <- GRanges(
+MAgr37 <- GRanges(
   seqnames = topMA_SNPs$CHR,
   ranges = IRanges(start = topMA_SNPs$BP, end = topMA_SNPs$BP),
   SNP = topMA_SNPs$SNP
@@ -52,20 +51,19 @@ gr37 <- GRanges(
 chain <- import.chain("~/Downloads/hg19ToHg38.over.chain")
 
 # Perform liftover
-lifted <- liftOver(gr37, chain)
-lifted_flat <- unlist(lifted) #flatten results
+MAlifted <- liftOver(MAgr37, chain)
+MAlifted_flat <- unlist(MAlifted) #flatten results
 
 ##### 4. Add GRCh38 positions to dataframe #####
-
 # Initialize NA columns
 topMA_SNPs$CHR_hg38 <- NA
 topMA_SNPs$BP_hg38 <- NA
 
 # Map results back to the correct SNPs
-matched_indices <- match(lifted_flat$SNP, topMA_SNPs$SNP)
+MAmatched_indices <- match(MAlifted_flat$SNP, topMA_SNPs$SNP)
 
-topMA_SNPs$CHR_hg38[matched_indices] <- as.character(seqnames(lifted_flat))
-topMA_SNPs$BP_hg38[matched_indices]  <- start(lifted_flat)
+topMA_SNPs$CHR_hg38[MAmatched_indices] <- as.character(seqnames(MAlifted_flat))
+topMA_SNPs$BP_hg38[MAmatched_indices]  <- start(MAlifted_flat)
 
 ##### 5. Count SNPs that failed liftover #####
 sum(is.na(topMA_SNPs$BP_hg38))
@@ -75,14 +73,12 @@ topMA_SNPs$CHR <- topMA_SNPs$CHR_hg38
 topMA_SNPs$BP  <- topMA_SNPs$BP_hg38
 
 ##### 7. Create final cleaned dataset (with GRCh38 positions) #####
-finalMA_SNPs <- topMA_SNPs %>%
-  select(
-    SNP,CHR, BP, A1, A2, BETA = bJ
-  )
+topMA_SNPs <- as.data.frame(topMA_SNPs)
+finalMA_SNPs <- dplyr::select(topMA_SNPs, SNP, CHR, BP, A1, A2, BETA = bJ)
+
 
 ##### 8. Create PLINK PRS weight file #####
-finalMA_PLINK <- finalMA_SNPs %>%
-  select(CHR, BP, A1, A2, BETA)
+finalMA_PLINK <- dplyr::select(finalMA_SNPs, CHR, BP, A1, A2, BETA)
 
 ##### 9. Save files #####
 write.csv(finalMA_SNPs,
@@ -100,12 +96,12 @@ write.table(finalMA_PLINK,
 # Euro-Ancestry 622 SNP Liftover
 # ===============================
 ##### 1. Load top SNPs file #####
-topEA_SNPs <- read.csv('~/Downloads/European Ancestry Top 556 SNPs.csv',
+topEA_SNPs <- read.csv('~/Downloads/European Ancestry Top 622 SNPs.csv',
                        skip = 1, header = FALSE)
 
 # Assign correct column names
 colnames(topEA_SNPs) <- c("Locus.Index", "SNP.Index", "SNP", "CHR", "BP", "A1", "A2", "FRQ_A", 
-                          "FRQ_U","INFO", "OR", "SE", "P","ngt", "HetISqt", "HetDf", "HetPVa",
+                          "FRQ_U","INFO", "OR", "SE", "P","ngt", "HetISqt", "HetPVa",
                           "Nca", "Nco", "Neff_half", "bJ", "bJ_se", "pJ",
                           "Locus.Left", "Locus.Right")
 
@@ -113,7 +109,6 @@ colnames(topEA_SNPs) <- c("Locus.Index", "SNP.Index", "SNP", "CHR", "BP", "A1", 
 topEA_before <- topEA_SNPs
 
 ##### 2. Liftover GRCh37 -> GRCh38 (hg19 -> hg38) #####
-
 # Fix sex chromosome coding
 topEA_SNPs$CHR[topEA_SNPs$CHR == 23] <- "X"
 topEA_SNPs$CHR[topEA_SNPs$CHR == 24] <- "Y"   # if present
@@ -159,7 +154,7 @@ sum(is.na(topEA_SNPs$BP_hg38))
 topEA_SNPs$CHR <- topEA_SNPs$CHR_hg38
 topEA_SNPs$BP  <- topEA_SNPs$BP_hg38
 
-##### 7. Calculate BETAs for 4 chrX #####
+##### 7. Calculate BETAs for chrX #####
 # Rename bJ column to BETA
 colnames(topEA_SNPs)[colnames(topEA_SNPs) == "bJ"] <- "BETA"
 
