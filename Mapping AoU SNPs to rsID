@@ -1,0 +1,62 @@
+# Create .py file
+nano map_chrpos_to_rsid.py
+
+# Inside .py file
+#! /usr/bin/env python2
+
+import gzip
+
+vcf = "00-All.vcf.gz"
+input_file = "bim_snps.txt"
+output_file = "mapped_chrpos_with_rsid.txt"
+
+# Load (chr, pos) pairs into a set
+targets = set()
+with open(input_file) as f:
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        chrom, pos = line.split()
+        targets.add((chrom, pos))
+
+# For faster lookup, make dictionary: (chr,pos) -> rsID
+results = {}
+
+with gzip.open(vcf, "rt") as f:
+    for line in f:
+        if line.startswith("#"):
+            continue
+        fields = line.split("\t")
+        chrom = fields[0]
+        pos = fields[1]
+        rsid = fields[2]
+
+        key = (chrom, pos)
+        if key in targets:
+            results[key] = rsid
+
+# Write output
+with open(output_file, "w") as out:
+    out.write("chr\tpos\trsid\n")
+    for chrom, pos in targets:
+        if (chrom, pos) in results:
+            out.write("%s\t%s\t%s\n" % (chrom, pos, results[(chrom, pos)]))
+        else:
+            out.write("%s\t%s\tNA\n" % (chrom, pos))
+
+print("Done. Output saved to: %s" % output_file)
+
+
+
+# Run .py script to map chrpos to rsID
+python2 map_chrpos_to_rsid.py
+
+# Count number that did not map
+grep -w "NA" mapped_chrpos_with_rsid.txt | wc -l
+
+# Count number that mapped
+grep -v -w "NA" mapped_chrpos_with_rsid.txt | grep -v "^chr" | wc -l
+
+# Confirm 6 duplicates that were removed during mapping
+sort bim_snps.txt | uniq -d | wc -l
