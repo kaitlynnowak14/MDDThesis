@@ -6,7 +6,7 @@ import pandas
 import os
 
 # This query represents dataset "European Ancestry Dataset" for domain "condition" and was generated for All of Us Controlled Tier Dataset v8
-dataset_07705086_condition_sql = """
+dataset_95202759_condition_sql = """
     SELECT
         c_occurrence.person_id,
         c_occurrence.condition_start_datetime 
@@ -101,12 +101,6 @@ dataset_07705086_condition_sql = """
                     WHERE
                         sex_at_birth_concept_id IN (45878463, 45880669) ) 
                     AND cb_search_person.person_id IN (SELECT
-                        person_id 
-                    FROM
-                        `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
-                    WHERE
-                        has_array_data = 1 ) 
-                    AND cb_search_person.person_id IN (SELECT
                         criteria.person_id 
                     FROM
                         (SELECT
@@ -180,6 +174,12 @@ dataset_07705086_condition_sql = """
                             OR  concept_id IN (1585940) 
                             AND is_standard = 0  
                             AND  value_source_concept_id IN (1585948))) criteria ) 
+                    AND cb_search_person.person_id IN (SELECT
+                        person_id 
+                    FROM
+                        `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
+                    WHERE
+                        has_whole_genome_variant = 1 ) 
                     AND cb_search_person.person_id NOT IN (SELECT
                         criteria.person_id 
                     FROM
@@ -236,13 +236,13 @@ dataset_07705086_condition_sql = """
                             AND  value_source_concept_id IN (903096))) criteria ) )
             )) c_occurrence"""
 
-dataset_07705086_condition_df = pandas.read_gbq(
-    dataset_07705086_condition_sql,
+dataset_95202759_condition_df = pandas.read_gbq(
+    dataset_95202759_condition_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_07705086_condition_df.head(5)
+dataset_95202759_condition_df.head(5)
 
 #############################
 ##### Person Phenotypes #####
@@ -252,7 +252,7 @@ import pandas
 import os
 
 # This query represents dataset "European Ancestry Dataset" for domain "person" and was generated for All of Us Controlled Tier Dataset v8
-dataset_07705086_person_sql = """
+dataset_95202759_person_sql = """
     SELECT
         person.person_id,
         person.birth_datetime as date_of_birth,
@@ -325,12 +325,6 @@ dataset_07705086_person_sql = """
                 `""" + os.environ["WORKSPACE_CDR"] + """.person` p 
             WHERE
                 sex_at_birth_concept_id IN (45878463, 45880669) ) 
-            AND cb_search_person.person_id IN (SELECT
-                person_id 
-            FROM
-                `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
-            WHERE
-                has_array_data = 1 ) 
             AND cb_search_person.person_id IN (SELECT
                 criteria.person_id 
             FROM
@@ -405,6 +399,12 @@ dataset_07705086_person_sql = """
                     OR  concept_id IN (1585940) 
                     AND is_standard = 0  
                     AND  value_source_concept_id IN (1585948))) criteria ) 
+            AND cb_search_person.person_id IN (SELECT
+                person_id 
+            FROM
+                `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
+            WHERE
+                has_whole_genome_variant = 1 ) 
             AND cb_search_person.person_id NOT IN (SELECT
                 criteria.person_id 
             FROM
@@ -460,13 +460,13 @@ dataset_07705086_person_sql = """
                     AND is_standard = 0  
                     AND  value_source_concept_id IN (903096))) criteria ) )"""
 
-dataset_07705086_person_df = pandas.read_gbq(
-    dataset_07705086_person_sql,
+dataset_95202759_person_df = pandas.read_gbq(
+    dataset_95202759_person_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_07705086_person_df.head(5)
+dataset_95202759_person_df.head(5)
 
 #############################
 ##### Survey Phenotypes #####
@@ -476,7 +476,7 @@ import pandas
 import os
 
 # This query represents dataset "European Ancestry Dataset" for domain "survey" and was generated for All of Us Controlled Tier Dataset v8
-dataset_07705086_survey_sql = """
+dataset_95202759_survey_sql = """
     SELECT
         answer.person_id,
         answer.question,
@@ -551,12 +551,6 @@ dataset_07705086_survey_sql = """
                 WHERE
                     sex_at_birth_concept_id IN (45878463, 45880669) ) 
                 AND cb_search_person.person_id IN (SELECT
-                    person_id 
-                FROM
-                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
-                WHERE
-                    has_array_data = 1 ) 
-                AND cb_search_person.person_id IN (SELECT
                     criteria.person_id 
                 FROM
                     (SELECT
@@ -630,6 +624,12 @@ dataset_07705086_survey_sql = """
                         OR  concept_id IN (1585940) 
                         AND is_standard = 0  
                         AND  value_source_concept_id IN (1585948))) criteria ) 
+                AND cb_search_person.person_id IN (SELECT
+                    person_id 
+                FROM
+                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
+                WHERE
+                    has_whole_genome_variant = 1 ) 
                 AND cb_search_person.person_id NOT IN (SELECT
                     criteria.person_id 
                 FROM
@@ -686,13 +686,13 @@ dataset_07705086_survey_sql = """
                         AND  value_source_concept_id IN (903096))) criteria ) )
         )"""
 
-dataset_07705086_survey_df = pandas.read_gbq(
-    dataset_07705086_survey_sql,
+dataset_95202759_survey_df = pandas.read_gbq(
+    dataset_95202759_survey_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_07705086_survey_df.head(5)
+dataset_95202759_survey_df.head(5)
 
 ##################################
 ##### Adding Survey Datetime #####
@@ -702,7 +702,7 @@ import pandas
 import os
 
 # This query represents dataset "Survey Datetime" for domain "survey" and was generated for All of Us Controlled Tier Dataset v8
-dataset_51623195_survey_sql = """
+dataset_44278276_survey_sql = """
     SELECT
         answer.person_id,
         answer.survey_datetime  
@@ -792,12 +792,6 @@ dataset_51623195_survey_sql = """
                 WHERE
                     sex_at_birth_concept_id IN (45878463, 45880669) ) 
                 AND cb_search_person.person_id IN (SELECT
-                    person_id 
-                FROM
-                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
-                WHERE
-                    has_array_data = 1 ) 
-                AND cb_search_person.person_id IN (SELECT
                     criteria.person_id 
                 FROM
                     (SELECT
@@ -871,6 +865,12 @@ dataset_51623195_survey_sql = """
                         OR  concept_id IN (1585940) 
                         AND is_standard = 0  
                         AND  value_source_concept_id IN (1585948))) criteria ) 
+                AND cb_search_person.person_id IN (SELECT
+                    person_id 
+                FROM
+                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
+                WHERE
+                    has_whole_genome_variant = 1 ) 
                 AND cb_search_person.person_id NOT IN (SELECT
                     criteria.person_id 
                 FROM
@@ -927,10 +927,10 @@ dataset_51623195_survey_sql = """
                         AND  value_source_concept_id IN (903096))) criteria ) )
         )"""
 
-dataset_51623195_survey_df = pandas.read_gbq(
-    dataset_51623195_survey_sql,
+dataset_44278276_survey_df = pandas.read_gbq(
+    dataset_44278276_survey_sql,
     dialect="standard",
     use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
     progress_bar_type="tqdm_notebook")
 
-dataset_51623195_survey_df.head(5)
+dataset_44278276_survey_df.head(5)
