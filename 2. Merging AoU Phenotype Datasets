@@ -7,10 +7,10 @@ import os
 import hail as hl
 
 ##### Load DataFrames from Queries #####
-person_df = dataset_07705086_person_df
-survey_df = dataset_07705086_survey_df
-condition_df = dataset_07705086_condition_df
-survey_df2 = dataset_51623195_survey_df
+person_df = dataset_95202759_person_df
+survey_df = dataset_95202759_survey_df
+condition_df = dataset_95202759_condition_df
+survey_df2 = dataset_44278276_survey_df
 
 ##### Process Old Survey #####
 survey_recent = survey_df.drop_duplicates(subset=["person_id", "question"], keep="last")
