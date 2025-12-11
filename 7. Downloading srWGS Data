@@ -1,0 +1,16 @@
+##### 1. Set Up #####
+from datetime import datetime
+import os
+start = datetime.now()
+
+bucket = os.getenv('WORKSPACE_BUCKET')
+bucket
+
+genomic_location = os.getenv("CDR_STORAGE_PATH")
+genomic_location
+
+import hail as hl
+
+hl.default_reference(new_default_reference = "GRCh38")
+
+##### 2. srWGS #####
