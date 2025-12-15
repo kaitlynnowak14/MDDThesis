@@ -1,7 +1,11 @@
 """
 Survey_Phenotypes.py
 
-Note: This script was provided by the All of Us Research Program (Controlled Tier v8).
+Summary:
+  Queries survey answers and survey datetimes for a specific European ancestry cohort
+  in the All of Us Controlled Tier v8 dataset.
+
+Notes: This script was provided by the All of Us Research Program (Controlled Tier v8).
 - This is based on a specific cohort and selected variables.
 - This file includes 2 datasets:
   1. Survey Answers
