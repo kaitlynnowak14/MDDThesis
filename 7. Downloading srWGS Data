@@ -260,40 +260,41 @@ hl.default_reference(new_default_reference = "GRCh38")
 acaf_split_mt_path = os.getenv("WGS_ACAF_THRESHOLD_SPLIT_HAIL_PATH")
 acaf_split_mt_path
 
-acad_split_mt_path = "#INSERT PATH HERE"
+acad_split_mt_path = "gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/acaf_threshold/splitMT/hail.mt"
 
 acaf_split_mt = hl.read_matrix_table(acaf_split_mt_path)
 
 # Check counts & describe
 acaf_split_mt.count()
 
-acaf-split_mt.describe()
+acaf_split_mt.describe()
+
+#===================================================
 
 ##### 3. Filter Hail MT to participants #####
 # Set path to cohort
 mdd_SNP_cohort_path = "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/mdd_thesis_cohort.tsv"
 
 # Import cohort as Hail Table and key correctly for WGS
-mdd_SNP_ht = (
-    hl.import_table(
-        mdd_SNP_cohort_path,
-        types={'person_id': hl.tstr},
-        key='person_id'
-    )
-    .rename({'person_id': 's'})  # 🔑 must match MT column key
+mdd_SNP_ht = hl.import_table(
+    mdd_SNP_cohort_path,
+    types={'person_id': hl.tstr},
+    key='person_id'
 )
 
-mdd_SNP_ht.count()
-
 # Filter WGS MT to cohort
-SNP_data_mt = mt_SNP.semi_join_cols(mdd_SNP_ht)
-SNP_data_mt.count()
+SNP_data_mt = acaf_split_mt.semi_join_cols(mdd_SNP_ht)
+
+# Count rows/cols to confirm
+print(SNP_data_mt.count())
 
 # Save to workspace bucket
 SNP_data_mt.write('gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/SNP_data.mt', overwrite=True)
 
 # Confirm it saved
 !gsutil ls gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/
+
+# ==================================================================
 
 ##### 4. Convert cohort filtered Hail MT to PLINK files #####
 SNP_data_mt = hl.read_matrix_table(
