@@ -1,11 +1,20 @@
 """
 Condition_Phenotypes.py
 
-Note: This script was provided by the All of Us Research Program (Controlled Tier v8).
+Summary:
+    Queries condition occurrence phenotypes (conditon start dates) for a specific
+    European ancestry cohort in the All of Us Controlled Tier v8 dataset.
+
+Notes: 
+- This script was provided by the All of Us Research Program (Controlled Tier v8).
 - This is based on a specific cohort and selected variables.
 - If another user generates their own dataset, the SQL and results may differ.
 - Do NOT modify this script - it is intented to be used as-is in the All of Us secure cloud environment.
 """
+
+# ====================
+# Condition Phenotypes
+# ====================
 
 import pandas
 import os
