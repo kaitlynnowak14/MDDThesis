@@ -1,16 +1,317 @@
-##### 1. Set Up #####
+##### Preparing Genomic Data #####
+
 from datetime import datetime
+import pandas
 import os
+
 start = datetime.now()
 
+# This query represents dataset "Genomics Pull" for domain "person" and was generated for All of Us Controlled Tier Dataset v8
+dataset_97827407_person_sql = """
+    SELECT
+        person.person_id 
+    FROM
+        `""" + os.environ["WORKSPACE_CDR"] + """.person` person   
+    WHERE
+        person.PERSON_ID IN (SELECT
+            distinct person_id  
+        FROM
+            `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` cb_search_person  
+        WHERE
+            cb_search_person.person_id IN (SELECT
+                criteria.person_id 
+            FROM
+                (SELECT
+                    DISTINCT person_id, entry_date, concept_id 
+                FROM
+                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                WHERE
+                    (concept_id IN(SELECT
+                        DISTINCT c.concept_id 
+                    FROM
+                        `""" + os.environ["WORKSPACE_CDR"] + """.cb_criteria` c 
+                    JOIN
+                        (SELECT
+                            CAST(cr.id as string) AS id       
+                        FROM
+                            `""" + os.environ["WORKSPACE_CDR"] + """.cb_criteria` cr       
+                        WHERE
+                            concept_id IN (4152280)       
+                            AND full_text LIKE '%_rank1]%'      ) a 
+                            ON (c.path LIKE CONCAT('%.', a.id, '.%') 
+                            OR c.path LIKE CONCAT('%.', a.id) 
+                            OR c.path LIKE CONCAT(a.id, '.%') 
+                            OR c.path = a.id) 
+                    WHERE
+                        is_standard = 1 
+                        AND is_selectable = 1) 
+                    AND is_standard = 1 )) criteria ) 
+            AND cb_search_person.person_id IN (SELECT
+                criteria.person_id 
+            FROM
+                (SELECT
+                    DISTINCT person_id, entry_date, concept_id 
+                FROM
+                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                WHERE
+                    (concept_id IN (1586155) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585337))) criteria ) 
+            AND cb_search_person.person_id IN (SELECT
+                person_id 
+            FROM
+                `""" + os.environ["WORKSPACE_CDR"] + """.person` p 
+            WHERE
+                ethnicity_concept_id IN (38003564) ) 
+            AND cb_search_person.person_id IN (SELECT
+                person_id 
+            FROM
+                `""" + os.environ["WORKSPACE_CDR"] + """.person` p 
+            WHERE
+                race_concept_id IN (8527) ) 
+            AND cb_search_person.person_id IN (SELECT
+                person_id 
+            FROM
+                `""" + os.environ["WORKSPACE_CDR"] + """.person` p 
+            WHERE
+                sex_at_birth_concept_id IN (45878463, 45880669) ) 
+            AND cb_search_person.person_id IN (SELECT
+                criteria.person_id 
+            FROM
+                (SELECT
+                    DISTINCT person_id, entry_date, concept_id 
+                FROM
+                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                WHERE
+                    (concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585893) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585894) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585895) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585896) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585897) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585898) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585953) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585955) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585956) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585954) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585957) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585958) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585959) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585960) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585941) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585942) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585943) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585944) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585945) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585946) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585947) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (1585948))) criteria ) 
+            AND cb_search_person.person_id IN (SELECT
+                person_id 
+            FROM
+                `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_person` p 
+            WHERE
+                has_whole_genome_variant = 1 ) 
+            AND cb_search_person.person_id NOT IN (SELECT
+                criteria.person_id 
+            FROM
+                (SELECT
+                    DISTINCT person_id, entry_date, concept_id 
+                FROM
+                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                WHERE
+                    (concept_id IN(SELECT
+                        DISTINCT c.concept_id 
+                    FROM
+                        `""" + os.environ["WORKSPACE_CDR"] + """.cb_criteria` c 
+                    JOIN
+                        (SELECT
+                            CAST(cr.id as string) AS id       
+                        FROM
+                            `""" + os.environ["WORKSPACE_CDR"] + """.cb_criteria` cr       
+                        WHERE
+                            concept_id IN (4299535)       
+                            AND full_text LIKE '%_rank1]%'      ) a 
+                            ON (c.path LIKE CONCAT('%.', a.id, '.%') 
+                            OR c.path LIKE CONCAT('%.', a.id) 
+                            OR c.path LIKE CONCAT(a.id, '.%') 
+                            OR c.path = a.id) 
+                    WHERE
+                        is_standard = 1 
+                        AND is_selectable = 1) 
+                    AND is_standard = 1 )) criteria ) 
+            AND cb_search_person.person_id NOT IN (SELECT
+                criteria.person_id 
+            FROM
+                (SELECT
+                    DISTINCT person_id, entry_date, concept_id 
+                FROM
+                    `""" + os.environ["WORKSPACE_CDR"] + """.cb_search_all_events` 
+                WHERE
+                    (concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (903079) 
+                    OR  concept_id IN (1585940) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (903096) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (903079) 
+                    OR  concept_id IN (1585892) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (903096) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (903079) 
+                    OR  concept_id IN (1585952) 
+                    AND is_standard = 0  
+                    AND  value_source_concept_id IN (903096))) criteria ) )"""
+
+dataset_97827407_person_df = pandas.read_gbq(
+    dataset_97827407_person_sql,
+    dialect="standard",
+    use_bqstorage_api=("BIGQUERY_STORAGE_API_ENABLED" in os.environ),
+    progress_bar_type="tqdm_notebook")
+
+dataset_97827407_person_df.head(5)
+
+# ============================================================================================
+
+##### Convert pandas table to tsv #####
+# Save person IDs as strings
+dataset_97827407_person_df["person_id"] = dataset_97827407_person_df["person_id"].astype(str)
+
+# Save data frame as a tsv to workspace bucket
+workspace_bucket = os.environ['WORKSPACE_BUCKET']
+
+dataset_97827407_person_df.to_csv('mdd_thesis_cohort.tsv', index=False, sep='\t')
+!gsutil cp 'mdd_thesis_cohort.tsv' {workspace_bucket}/data/
+!gsutil ls {workspace_bucket}/data
+
+# ==============================================================================================
+##### Begin Pulling Genomic Data #####
+
+##### Before you start running this notebook, make sure you are using a Dataproc runtime. To do so, #####
+    # Click on the Jupyter icon on the right hand side of the screen
+    # Inside Recommended environments, select Hail Genomics Analysis, which creates the computer type Dataproc Cluster
+    # Select reasonable defaults for CPU, RAM, disk and numbers of workers
+    # Click on Next
+
+##### 1. Set Up #####
+
+# Save bucket path
 bucket = os.getenv('WORKSPACE_BUCKET')
 bucket
 
+# Save genomic data bucket location
 genomic_location = os.getenv("CDR_STORAGE_PATH")
 genomic_location
 
+# Initialize hail & set reference genome
 import hail as hl
 
 hl.default_reference(new_default_reference = "GRCh38")
 
-##### 2. srWGS #####
+##### 2. Load srWGS Hail MT #####
+# Load common variants Hail MT with only bi-allelic variants
+acaf_split_mt_path = os.getenv("WGS_ACAF_THRESHOLD_SPLIT_HAIL_PATH")
+acaf_split_mt_path
+
+acad_split_mt_path = "#INSERT PATH HERE"
+
+acaf_split_mt = hl.read_matrix_table(acaf_split_mt_path)
+
+# Check counts & describe
+acaf_split_mt.count()
+
+acaf-split_mt.describe()
+
+##### 3. Filter Hail MT to participants #####
+# Set path to cohort
+mdd_SNP_cohort_path = "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/mdd_thesis_cohort.tsv"
+
+# Import cohort as Hail Table and key correctly for WGS
+mdd_SNP_ht = (
+    hl.import_table(
+        mdd_SNP_cohort_path,
+        types={'person_id': hl.tstr},
+        key='person_id'
+    )
+    .rename({'person_id': 's'})  # 🔑 must match MT column key
+)
+
+mdd_SNP_ht.count()
+
+# Filter WGS MT to cohort
+SNP_data_mt = mt_SNP.semi_join_cols(mdd_SNP_ht)
+SNP_data_mt.count()
+
+# Save to workspace bucket
+SNP_data_mt.write('gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/SNP_data.mt', overwrite=True)
+
+# Confirm it saved
+!gsutil ls gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/
+
+##### 4. Convert cohort filtered Hail MT to PLINK files #####
+SNP_data_mt = hl.read_matrix_table(
+    "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/SNP_data.mt"
+)
+
+out_path = f"{bucket}/data/SNP_data_plink"
+
+hl.export_plink(
+    SNP_data_mt,
+    out_path,
+    ind_id=SNP_data_mt.s,
+    fam_id=SNP_data_mt.s
+)
+
+# Check PLINK sample count
+SNP_data_mt.count()[1]
+
+##### 6. Conclusion #####
+stop = datetime.now()
+print(str(stop-start))
