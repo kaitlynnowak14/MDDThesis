@@ -2,8 +2,6 @@
 
 This folder contains the script `Merge_Phenotypes.py` which merges multiple phenotype datasets from the **All of Us Researcher Program (Controlled Tier v8)** into a single consolidated dataset.
 
-**Important:** Do **not** modify this script. It is intended to be run as-is with a properly loaded `merged_df` in the secure All of Us environment.
-
 ---
 
 ## Scripts Overview
