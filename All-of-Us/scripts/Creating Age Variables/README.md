@@ -2,8 +2,6 @@
 
 This folder contains Python scripts to generate age-related variables for the **All of Us phenotype dataset**. Each script calculates a specific age variable and generates summary outputs for analysis.
 
-**Important:** Do **not** modify these scripts. They are intended to be run as-is with a properly loaded `merged_df` in the secure All of Us environment.
-
 ---
 
 ## Scripts Overview
