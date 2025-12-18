@@ -2,8 +2,6 @@
 
 This folder contains the script `Sociodemographic_Characteristics.py` which generates a Table 1-style summary of sociodemographic characteristics for the merged **All of Us phenotype dataset**.
 
-**Important:** Do **not** modify this script. It is intended to be run as-is with a properly loaded `merged_df` in the secure All of Us environment.
-
 ---
 
 ## Scripts Overview
