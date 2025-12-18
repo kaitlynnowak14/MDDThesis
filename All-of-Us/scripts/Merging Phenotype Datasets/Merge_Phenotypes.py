@@ -1,5 +1,5 @@
 """
-merge_phenotypes.py
+Merge_Phenotypes.py
 
 Notes:
 - This script merges the phenotype datasets from the All of Us Researcher Program (Controlled Tier v8) into a single dataset.
