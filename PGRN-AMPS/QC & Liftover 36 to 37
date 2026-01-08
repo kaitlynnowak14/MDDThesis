@@ -8,10 +8,6 @@ plink \
   --make-bed \
   --out PGRN_AMPS_QC
 
-
-
-
-
 ##### 1. Fix chr 23 to be chr X in QCed files
 # Fix chromosome 23 → X in .bim
 awk '{if($1==23) $1="X"; print $0}' PGRN_AMPS_QC.bim > PGRN_AMPS_QC_hg18_chrFix.bim
@@ -49,6 +45,42 @@ plink --bfile PGRN_AMPS_QC_hg19_flipped \
       --geno 0.02 \
       --make-bed \
       --out PGRN_AMPS_QC_hg19_genotyped
+
+##### Check for related individuals #####
+# Create list of related pairs and their PIHAT scores
+plink --bfile PGRN_AMPS_QC_hg19_genotyped \
+      --genome \
+      --min 0.185 \
+      --out ibd
+
+# List of related pairs
+ awk '$10 > 0.185 {print $1, $2, $3, $4}' ibd.genome \
+| awk 'NF==4' > related_pairs_clean.txt
+
+# remove headers
+tail -n +2 related_pairs_clean.txt > related_pairs_noheader.txt
+
+## One individual was randomly excluded from each pair of related participants (PI_HAT ≥ 0.185) to ensure independence of observations.
+# Make list of 1 individual from each pair to be randomly removed
+awk 'BEGIN{srand()} { if (rand() < 0.5) print $1, $2; else print $3, $4 }' \
+related_pairs_noheader.txt > remove_related_random.txt
+
+# Remove selected individuals
+plink --bfile PGRN_AMPS_QC_hg19_genotyped \
+      --remove remove_related_random.txt \
+      --make-bed \
+      --out PGRN_AMPS_QC_hg19_unrelated
+
+##### Remove strand ambiguous SNPs 
+plink --bfile PGRN_AMPS_QC_hg19_unrelated \
+      --exclude <(awk '{if (($5=="A" && $6=="T")||($5=="T" && $6=="A")||($5=="C" && $6=="G")||($5=="G" && $6=="C")) print $2}' PGRN_AMPS_QC_hg19_unrelated.bim) \
+      --make-bed \
+      --out PGRN_AMPS_QC_hg19_unrelated_noambig
+
+# compare before and after counts
+wc -l PGRN_AMPS_QC_hg19_unrelated_noambig.bim
+wc -l PGRN_AMPS_QC_hg19_unrelated.bim
+
 
 
 
