@@ -6,8 +6,8 @@ awk '{if($2==23) $2="X"; print $0}' TopEA_SNPs_GRCh37_weights.txt > TopEA_SNPs_G
 awk '{if($2==23) $2="X"; print $0}' TopMA_SNPs_GRCh37_weights.txt > TopMA_SNPs_GRCh37_weights_chrFix.txt
 
 ##### Check overlap before imputation
-# Extract SNP IDs from the new hg19 .bim
-awk '{print $2}' PGRN_AMPS_QC_hg19.bim | sort > bim_snps.txt
+# Extract SNP IDs from the fully QCed hg19 .bim
+awk '{print $2}' PGRN_AMPS_QC_hg19_unrelated_noambig.bim | sort > bim_snps.txt
 
 # Extract SNP IDs from the EA weights file
 awk '{print $1}' TopEA_SNPs_GRCh37_weights_chrFix.txt | sort > EA_weights_snps.txt
@@ -19,5 +19,7 @@ comm -12 bim_snps.txt EA_weights_snps.txt > EA_snps_overlap.txt
 wc -l EA_snps_overlap.txt
 
 awk '{print $1}' TopMA_SNPs_GRCh37_weights_chrFix.txt | sort > MA_weights_snps.txt
+
 comm -12 bim_snps.txt MA_weights_snps.txt > MA_snps_overlap.txt
+
 wc -l MA_snps_overlap.txt
