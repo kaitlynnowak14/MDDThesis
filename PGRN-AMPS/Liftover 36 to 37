@@ -1,0 +1,16 @@
+awk '{print "chr"$1, $4-1, $4, $2}' PGRN_AMPS_QC.bim > PGRN_AMPS_QC_hg18.bed
+
+wget http://hgdownload.cse.ucsc.edu/goldenpath/hg18/liftOver/hg18ToHg19.over.chain.gz
+ gunzip hg18ToHg19.over.chain.gz
+
+CrossMap bed hg18ToHg19.over.chain PGRN_AMPS_QC_hg18.bed PGRN_AMPS_QC_hg19.bed
+
+wc -l PGRN_AMPS_QC_hg18.bed
+wc -l PGRN_AMPS_QC_hg19.bed
+
+awk '{print $1, $4, 0, $3}' PGRN_AMPS_QC_hg19.bed > liftover_map.txt
+
+awk 'NR==FNR{a[$2]=$5"\t"$6; next} $2 in a{print $1, $2, $3, $4, a[$2]}' PGRN_AMPS_QC.bim liftover_map.txt > PGRN_AMPS_QC_hg19.bim
+
+awk '{gsub(/"/,""); if(NR>1) print $1}' TopEA_SNPs_GRCh37_weights.txt > TopEA_SNPs.list
+awk '{gsub(/"/,""); if(NR>1) print $1}' TopMA_SNPs_GRCh37_weights.txt > TopMA_SNPs.list
