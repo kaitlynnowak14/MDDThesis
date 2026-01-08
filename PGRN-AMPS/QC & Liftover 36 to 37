@@ -1,3 +1,17 @@
+cd "/Users/knowak/Desktop/PGRN-AMPS/Files Needed for Analyses/genotype_matrix/sub/sub20131107"
+
+plink \
+  --bfile SSRIdbGaP \
+  --keep SUBJIDs_to_keep.txt \
+  --maf 0.01 \
+  --hwe 1e-6 \
+  --make-bed \
+  --out PGRN_AMPS_QC
+
+
+
+
+
 ##### 1. Fix chr 23 to be chr X in QCed files
 # Fix chromosome 23 → X in .bim
 awk '{if($1==23) $1="X"; print $0}' PGRN_AMPS_QC.bim > PGRN_AMPS_QC_hg18_chrFix.bim
