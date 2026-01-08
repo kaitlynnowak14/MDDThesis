@@ -1,0 +1,12 @@
+# Create hg19. fam file
+cp PGRN_AMPS_QC.fam PGRN_AMPS_QC_hg19.fam
+
+##### Check strand orientation
+tar -xvzf phg000388.v1.PGRN-AMPS.genotype-calls-marker-info.Human610-Quadv1_B.MULTI.tar.gz
+
+# Make file of stands that need flipping from - to +
+awk -F',' 'NR>2 && $3=="BOT" {print $2}' markerinfo/Human660W-Quad_v1_A.csv > flip.txt
+
+
+
+##### Pre-Phasing #####
