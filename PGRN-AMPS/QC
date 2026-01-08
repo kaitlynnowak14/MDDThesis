@@ -1,9 +1,1 @@
-cd "/Users/knowak/Desktop/PGRN-AMPS/Files Needed for Analyses/genotype_matrix/sub/sub20131107"
 
-plink \
-  --bfile SSRIdbGaP \
-  --keep SUBJIDs_to_keep.txt \
-  --maf 0.01 \
-  --hwe 1e-6 \
-  --make-bed \
-  --out PGRN_AMPS_QC
