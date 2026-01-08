@@ -2,9 +2,6 @@
 # Fix chromosome 23 → X in .bim
 awk '{if($1==23) $1="X"; print $0}' PGRN_AMPS_QC.bim > PGRN_AMPS_QC_hg18_chrFix.bim
 
-# Fix chromosome 23 → X in .bed
-awk '{if($1==23) $1="X"; print $0}' PGRN_AMPS_QC.bed > PGRN_AMPS_QC_hg18_chrFix.bed
-
 awk '{print "chr"$1, $4-1, $4, $2}' PGRN_AMPS_QC_hg18_chrFix.bim > PGRN_AMPS_QC_hg18_chrFix.bed
 
 wget http://hgdownload.cse.ucsc.edu/goldenpath/hg18/liftOver/hg18ToHg19.over.chain.gz
@@ -19,28 +16,25 @@ awk '{print $1, $4, 0, $3}' PGRN_AMPS_QC_hg19.bed > liftover_map.txt
 
 awk 'NR==FNR{a[$2]=$5"\t"$6; next} $2 in a{print $1, $2, $3, $4, a[$2]}' PGRN_AMPS_QC.bim liftover_map.txt > PGRN_AMPS_QC_hg19.bim
 
-head PGRN_AMPS_QC_hg19.bim
+awk '{print $2}' PGRN_AMPS_QC_hg19.bim > snps_to_keep.txt
 
-##### Fix chromosome 23 → X in weights files
-# Fix chromosome 23 → X in EA
-awk '{if($2==23) $2="X"; print $0}' TopEA_SNPs_GRCh37_weights.txt > TopEA_SNPs_GRCh37_weights_chrFix.txt
+plink --bfile PGRN_AMPS_QC \
+      --keep PGRN_AMPS_QC.fam \
+      --extract snps_to_keep.txt \
+      --make-bed \
+      --out PGRN_AMPS_QC_hg19_safe
 
-# Fix chromosome 23 → X in MA
-awk '{if($2==23) $2="X"; print $0}' TopMA_SNPs_GRCh37_weights.txt > TopMA_SNPs_GRCh37_weights_chrFix.txt
+##### Flip strands if needed
+plink --bfile PGRN_AMPS_QC_hg19_safe \
+      --flip flip.txt \
+      --make-bed \
+      --out PGRN_AMPS_QC_hg19_flipped
 
-##### Check overlap before imputation
-# Extract SNP IDs from the new hg19 .bim
-awk '{print $2}' PGRN_AMPS_QC_hg19.bim | sort > bim_snps.txt
+##### Remove SNPs that failed genotyping (call rate < 98%)
+plink --bfile PGRN_AMPS_QC_hg19_flipped \
+      --geno 0.02 \
+      --make-bed \
+      --out PGRN_AMPS_QC_hg19_genotyped
 
-# Extract SNP IDs from the EA weights file
-awk '{print $1}' TopEA_SNPs_GRCh37_weights_chrFix.txt | sort > EA_weights_snps.txt
 
-# Find intersection
-comm -12 bim_snps.txt EA_weights_snps.txt > EA_snps_overlap.txt
 
-# Count overlapping SNPs
-wc -l EA_snps_overlap.txt
-
-awk '{print $1}' TopMA_SNPs_GRCh37_weights_chrFix.txt | sort > MA_weights_snps.txt
-comm -12 bim_snps.txt MA_weights_snps.txt > MA_snps_overlap.txt
-wc -l MA_snps_overlap.txt
