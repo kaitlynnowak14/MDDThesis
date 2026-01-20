@@ -1,0 +1,158 @@
+#!/bin/bash
+# PGRN-AMPS Genomic QC Workflow
+# Author: Kaitlyn
+# Description: PLINK QC pipeline for PGRN-AMPS genotype data
+# Note: Follows the original PGRN-AMPS paper QC steps
+
+# -----------------------------
+# 0. Set base directory
+# -----------------------------
+BASE_DIR="/Users/knowak/Desktop/PGRN-AMPS/Files Needed for Analyses/genotype_matrix/sub/sub20131107"
+cd "$BASE_DIR"
+
+# -----------------------------
+# 1. Initial QC: MAF, HWE, GENO subset participants
+# -----------------------------
+plink --bfile SSRIdbGaP\
+      --keep SUBJIDs_to_keep.txt \
+      --maf 0.01 \
+      --geno 0.02 \
+      --hwe 1e-6 \
+      --make-bed \
+      --out PGRN_AMPS_QC
+
+# -----------------------------
+# 2. Remove related individuals
+# -----------------------------
+# Compute pairwise relatedness
+plink --bfile PGRN_AMPS_QC \
+      --genome \
+      --min 0.185 \
+      --out ibd
+
+# Extract related pairs
+awk '$10 > 0.185 {print $1, $2, $3, $4}' ibd.genome | awk 'NF==4' > related_pairs_clean.txt
+tail -n +2 related_pairs_clean.txt > related_pairs_noheader.txt
+
+# Randomly select one from each pair to remove
+awk 'BEGIN{srand()} { 
+  if (rand() < 0.5) print $1, $2; 
+  else print $3, $4 
+}' related_pairs_noheader.txt > remove_related_random.txt
+
+# Remove selected individuals
+plink --bfile PGRN_AMPS_QC \
+      --remove remove_related_random.txt \
+      --make-bed \
+      --out PGRN_AMPS_QC_unrelated
+
+# Check final female/male counts (1 = male, 2 = female)
+awk '{print $5}' PGRN_AMPS_QC_unrelated.fam | sort | uniq -c
+
+# Post-relatedness missingness check
+plink --bfile PGRN_AMPS_QC_unrelated --missing --out missingness_post_related
+
+# =====================================================================================
+                                    # Liftover #
+# =====================================================================================
+
+# -----------------------------
+# 1. Create BED file for liftover
+# -----------------------------
+awk '{
+  chr=$1
+  if(chr==23) chr="X"
+  print "chr"chr, $4-1, $4, $2
+}' OFS="\t" PGRN_AMPS_QC_unrelated.bim > PGRN_AMPS_QC_unrelated_hg18.bed
+
+# -----------------------------
+# 2. Liftover hg18 → hg19
+# -----------------------------
+# Make sure your chain file exists
+wget -N http://hgdownload.cse.ucsc.edu/goldenpath/hg18/liftOver/hg18ToHg19.over.chain.gz
+gunzip -f hg18ToHg19.over.chain.gz
+
+# Use UCSC liftover
+wget http://hgdownload.cse.ucsc.edu/admin/exe/macOSX.x86_64/liftOver
+chmod +x liftOver
+
+# Run liftover
+./liftOver PGRN_AMPS_QC_unrelated_hg18.bed hg18ToHg19.over.chain \
+           PGRN_AMPS_QC_unrelated_hg19.bed \
+           PGRN_AMPS_QC_unrelated_unmapped.bed
+
+# -----------------------------
+# 3. Make a liftover map
+# -----------------------------
+# Create SNP ID → new chr/position map
+awk '{chr=$1; sub(/^chr/, "", chr); print $4, chr, $2+1}' \
+    PGRN_AMPS_QC_unrelated_hg19.bed > liftover_map.txt
+
+# -----------------------------
+# 4. Update BIM to hg19 coordinates
+# -----------------------------
+awk 'NR==FNR {a[$1]=$2"\t"$3; next} $2 in a {print a[$2], $2, $3, $4, $5, $6}' \
+    liftover_map.txt PGRN_AMPS_QC_unrelated.bim > PGRN_AMPS_QC_unrelated_hg19.bim
+
+# Fix file, so now only hg19 coordinates present
+awk '{print $1, $3, $4, $2, $6, $7}' OFS="\t" PGRN_AMPS_QC_unrelated_hg19.bim > PGRN_AMPS_QC_unrelated_hg19_fixed.bim
+
+# Confirm file is fixed
+head PGRN_AMPS_QC_unrelated_hg19_fixed.bim 
+
+# -----------------------------
+# 5. Update BED and FAM Files and make sure they match the newly created BIM file from above
+# -----------------------------
+# Extract only SNPs that successfully lifted
+awk '{print $4}' PGRN_AMPS_QC_unrelated_hg19.bed > snps_lifted.txt
+
+# Create a new PLINK dataset with onyl SNPs that successfully lifted
+plink --bfile PGRN_AMPS_QC_unrelated \
+      --extract snps_lifted.txt \
+      --make-bed \
+      --out PGRN_AMPS_QC_unrelated_hg19_safe
+
+# Replace BIM with newly updated hg19 coordinates file, but make sure names match across BIM, FAM, and BED
+cp PGRN_AMPS_QC_unrelated_hg19_fixed.bim PGRN_AMPS_QC_unrelated_hg19_safe.bim
+
+# -----------------------------
+# 5. Flip strands to match reference
+# -----------------------------
+plink --bfile PGRN_AMPS_QC_unrelated_hg19_safe \
+      --flip flip.txt \
+      --make-bed \
+      --out PGRN_AMPS_QC_unrelated_hg19_flipped
+
+# -----------------------------
+# 6. Remove strand-ambiguous SNPs (A/T, C/G)
+# -----------------------------
+# Identify strans-ambiguous SNPs
+awk '{if (($5=="A" && $6=="T")||($5=="T" && $6=="A")||($5=="C" && $6=="G")||($5=="G" && $6=="C")) print $2}' \
+    PGRN_AMPS_QC_unrelated_hg19_flipped.bim > snps_ambiguous.txt
+
+# Sanity check: count how many SNPs are being removed
+num_ambig=$(wc -l < snps_ambiguous.txt)
+echo "Number of strand-ambiguous SNPs removed: $num_ambig"
+
+# Remove ambiguous SNPs
+plink --bfile PGRN_AMPS_QC_unrelated_hg19_flipped \
+      --exclude snps_ambiguous.txt \
+      --make-bed \
+      --out PGRN_AMPS_QC_unrelated_hg19_noambig
+
+# -----------------------------
+# 7. Post-liftover callrate filter
+# -----------------------------
+plink --bfile PGRN_AMPS_QC_unrelated_hg19_noambig \
+      --geno 0.02 \
+      --make-bed \
+      --out PGRN_AMPS_QC_unrelated_hg19_final
+
+# -----------------------------
+# 8. Final sanity check
+# -----------------------------
+# Gives allele frequencies and missingness per SNP/sample for final QC verification
+plink --bfile PGRN_AMPS_QC_unrelated_hg19_final \
+      --freq \
+      --missing \
+      --out post_liftover_qc
