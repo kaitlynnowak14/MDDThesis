@@ -1,12 +1,279 @@
-# Create hg19. fam file
-cp PGRN_AMPS_QC.fam PGRN_AMPS_QC_hg19.fam
+#!/bin/bash
+# ============================================================================
+# PGRN-AMPS Local Imputation Pipeline
+# Author: Kaitlyn
+# Description: Pre-phasing (EAGLE2) and Imputation (MINIMAC4) for autosomes
+#              and chromosome X, following PGC workflow.
+# ============================================================================
 
-##### Check strand orientation
-tar -xvzf phg000388.v1.PGRN-AMPS.genotype-calls-marker-info.Human610-Quadv1_B.MULTI.tar.gz
+# -----------------------------
+# 1. Split autosomes and chrX
+# -----------------------------
+# Autosomes only
+plink --bfile PGRN_AMPS_QC_unrelated_hg19_final \
+      --chr 1-22 \
+      --make-bed \
+      --out PGRN_AMPS_QC_autosomes
 
-# Make file of stands that need flipping from - to +
-awk -F',' 'NR>2 && $3=="BOT" {print $2}' markerinfo/Human660W-Quad_v1_A.csv > flip.txt
+# Chr X - females
+awk '$5==2 {print $1, $2}' PGRN_AMPS_QC_unrelated_hg19_final.fam > females.txt
+plink --bfile PGRN_AMPS_QC_unrelated_hg19_final \
+      --chr X \
+      --keep females.txt \
+      --make-bed \
+      --out PGRN_AMPS_QC_chrX_females
+
+# Chr X - males
+awk '$5==1 {print $1, $2}' PGRN_AMPS_QC_unrelated_hg19_final.fam > males.txt
+plink --bfile PGRN_AMPS_QC_unrelated_hg19_final \
+      --chr X \
+      --keep males.txt \
+      --make-bed \
+      --out PGRN_AMPS_QC_chrX_males
+
+# -----------------------------
+# 2. Convert PLINK to VCF files
+# -----------------------------
+# Autosomes
+plink --bfile PGRN_AMPS_QC_autosomes \
+      --recode vcf bgz \
+      --out PGRN_AMPS_autosomes
+
+# Chr X - females
+plink --bfile PGRN_AMPS_QC_chrX_females \
+      --recode vcf bgz \
+      --out PGRN_AMPS_chrX_females
+
+# Chr X - males
+plink --bfile PGRN_AMPS_QC_chrX_males \
+      --recode vcf bgz \
+      --out PGRN_AMPS_chrX_males
+
+# -----------------------------
+# 3. Index VCF files
+# -----------------------------
+tabix -p vcf PGRN_AMPS_autosomes.vcf.gz
+tabix -p vcf PGRN_AMPS_chrX_females.vcf.gz
+tabix -p vcf PGRN_AMPS_chrX_males.vcf.gz
+
+# -----------------------------
+# 4. Download 1000 Genomes Phase 3 reference files
+# -----------------------------
+mkdir -p ~/PGRN-AMPS/1000G
+cd ~/PGRN-AMPS/1000G
+
+# All autosomes in a loop
+for chr in {1..22} X; do
+    wget https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${chr}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz
+    wget https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${chr}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz.tbi
+done
+
+# Chr X separately with different version
+wget https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz
+wget https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz.tbi
+
+# Check VCF contents
+zcat ALL.chr22.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz | head -n 20
+
+# -----------------------------
+# 5. Download HapMap Phase II + III combined maps
+# -----------------------------
+# Can download at this link: https://github.com/odelaneau/shapeit4/blob/master/maps/genetic_maps.b37.tar.gz 
+cd ~/Downloads
+tar -xvzf genetic_maps.b37.tar.gz
+
+# -----------------------------
+# 6. Annotate VCFs with AC, AF, and AN
+# -----------------------------
+# Autosomes
+bcftools +fill-tags PGRN_AMPS_autosomes.vcf.gz -Oz -o PGRN_AMPS_autosomes_AC.vcf.gz -- -t AC,AF
+bcftools index PGRN_AMPS_autosomes_AC.vcf.gz
+
+# ChrX - females
+bcftools +fill-tags PGRN_AMPS_chrX_females.vcf.gz -Oz -o PGRN_AMPS_chrX_females_AC.vcf.gz -- -t AC,AF
+bcftools index PGRN_AMPS_chrX_females_AC.vcf.gz
+
+# ChrX - males
+bcftools +fill-tags PGRN_AMPS_chrX_males.vcf.gz -Oz -o PGRN_AMPS_chrX_males_AC.vcf.gz -- -t AC,AF
+bcftools index PGRN_AMPS_chrX_males_AC.vcf.gz
+
+# AN part
+bcftools +fill-tags PGRN_AMPS_autosomes.vcf.gz \
+    -Oz -o PGRN_AMPS_autosomes_ACAN.vcf.gz \
+    -- -t AN,AC
+bcftools index PGRN_AMPS_autosomes_ACAN.vcf.gz
+
+bcftools +fill-tags PGRN_AMPS_chrX_females.vcf.gz \
+    -Oz -o PGRN_AMPS_chrX_females_ACAN.vcf.gz \
+    -- -t AN,AC
+bcftools index PGRN_AMPS_chrX_females_ACAN.vcf.gz
+
+bcftools +fill-tags PGRN_AMPS_chrX_males.vcf.gz \ 
+    -Oz -o PGRN_AMPS_chrX_males_ACAN.vcf.gz \ 
+    -- -t AN,AC
+bcftools index PGRN_AMPS_chrX_males_ACAN.vcf.gz 
+
+# -----------------------------
+# 7. Run Docker & Pre-phase with SHAPEIT5 in a .py file
+# -----------------------------
+nano run_shapeit5_phasing.sh
+
+# ================================================================================
+#!/bin/bash
+
+# ==========================
+# Shapeit5 Phasing Script (with AC + AN)
+# ==========================
+
+# --------------------------
+# Paths & Settings
+# --------------------------
+VCF_DIR="/Users/knowak/Desktop/PGRN-AMPS/Files Needed for Analyses/genotype_matrix/sub/sub20131107"
+MAP_DIR="/Users/knowak/Downloads/genetic_maps.b37"
+DOCKER_IMAGE="shapeit5_2023-05-05_d6ce1e2"
+THREADS=4
+
+# --------------------------
+# Autosomes (chromosomes 1-22)
+# --------------------------
+CHROMS=( {1..22} )
+
+for chr in "${CHROMS[@]}"; do
+    echo "Phasing chromosome $chr ..."
+
+    docker run --rm -it --platform linux/amd64 \
+        -v "$VCF_DIR":/vcfs \
+        -v "$MAP_DIR":/maps \
+        $DOCKER_IMAGE \
+        /usr/bin/phase_common_static \
+            --input /vcfs/PGRN_AMPS_autosomes_ACAN.vcf.gz \
+            --region $chr \
+            --map /maps/chr${chr}.b37.gmap.gz \
+            --output /vcfs/PGRN_AMPS_autosomes_phased_chr${chr}.bcf \
+            --output-format bcf \
+            --thread $THREADS \
+            --progress
+
+    echo "Finished chromosome $chr"
+done
+
+echo "All phasing complete!"
+# ================================================================================
+
+# make exectuable and run (back in command line)
+chmod +x run_shapeit5_phasing.sh
+./run_shapeit5_phasing.sh
+
+# Run Chr X for males and females separately
+nano run_shapeit5_phasing_chrX.sh
+
+# Replace spaces with underscores in males.txt file
+sed 's/ /_/g' males.txt > males_fixed.txt
+
+# Subset VCF using corrected males.txt file
+bcftools view -S males_fixed.txt -Oz -o PGRN_AMPS_chrX_males_haploid.vcf.gz PGRN_AMPS_chrX_males_ACAN.vcf.gz
+bcftools index PGRN_AMPS_chrX_males_haploid.vcf.gz
+
+# ================================================================================
+#!/bin/bash
+
+VCF_DIR="/Users/knowak/Desktop/PGRN-AMPS/Files Needed for Analyses/genotype_matrix/sub/sub20131107"
+MAP_DIR="/Users/knowak/Downloads/genetic_maps.b37"
+DOCKER_IMAGE="shapeit5_2023-05-05_d6ce1e2"
+THREADS=4
+
+# --------------------------
+# ChrX - females
+# --------------------------
+echo "Phasing ChrX - females ..."
+docker run --rm -it --platform linux/amd64 \
+    -v "$VCF_DIR":/vcfs \
+    -v "$MAP_DIR":/maps \
+    $DOCKER_IMAGE \
+    /usr/bin/phase_common_static \
+        --input /vcfs/PGRN_AMPS_chrX_females_ACAN.vcf.gz \
+        --map /maps/chrX.b37.gmap.gz \
+        --output /vcfs/PGRN_AMPS_chrX_females_phased.bcf \
+        --region 23 \
+        --thread $THREADS \
+        --progress
+
+# --------------------------
+# ChrX - males
+# --------------------------
+echo "Phasing ChrX - males ..."
+
+docker run --rm -it --platform linux/amd64 \
+    -v "$VCF_DIR":/vcfs \
+    -v "$MAP_DIR":/maps \
+    $DOCKER_IMAGE \
+    /usr/bin/phase_common_static \
+        --input /vcfs/PGRN_AMPS_chrX_males_haploid.vcf.gz \
+        --haploid /vcfs/males_fixed.txt \
+        --map /maps/chrX.b37.gmap.gz \
+        --output /vcfs/PGRN_AMPS_chrX_males_phased.bcf \
+        --region 23 \
+        --thread $THREADS \
+        --progress
+
+echo "ChrX phasing complete!"
+# ================================================================================
+
+# make exectuable and run (back in command line)
+chmod +x run_shapeit5_phasing_chrX.sh
+./run_shapeit5_phasing_chrX.sh
+
+# -----------------------------
+# 8. Download ref genome needed for MINIMAC4
+# -----------------------------
+# First, need to download MINIMAC4 for your computer setup
 
 
 
-##### Pre-Phasing #####
+
+
+
+
+
+
+
+
+
+# -----------------------------
+# 8. Imputation with MINIMAC4
+# -----------------------------
+# Autosomes
+minimac4 \
+  --refHaps "$REF_PANEL" \
+  --haps "$OUTPUT_DIR/PGRN_AMPS_autosomes_phased.vcf.gz" \
+  --prefix "$OUTPUT_DIR/PGRN_AMPS_autosomes_imputed" \
+  --rounds 5 \
+  --states 200
+
+# Chr X - females
+minimac4 \
+  --refHaps "$REF_PANEL" \
+  --haps "$OUTPUT_DIR/PGRN_AMPS_chrX_females_phased.vcf.gz" \
+  --prefix "$OUTPUT_DIR/PGRN_AMPS_chrX_females_imputed" \
+  --rounds 5 \
+  --states 200
+
+# Chr X - males
+minimac4 \
+  --refHaps "$REF_PANEL" \
+  --haps "$OUTPUT_DIR/PGRN_AMPS_chrX_males_phased.vcf.gz" \
+  --prefix "$OUTPUT_DIR/PGRN_AMPS_chrX_males_imputed" \
+  --rounds 5 \
+  --states 200
+
+# -----------------------------
+# 4. Post-imputation QC (example)
+# -----------------------------
+# Convert dosages to PLINK
+for chr in autosomes chrX_females chrX_males; do
+  plink --vcf "$OUTPUT_DIR/PGRN_AMPS_${chr}_imputed.dose.vcf.gz" \
+        --make-bed \
+        --out "$OUTPUT_DIR/PGRN_AMPS_${chr}_imputed_PLINK"
+done
+
+echo "Pre-phasing and imputation finished! Files are in $OUTPUT_DIR"
