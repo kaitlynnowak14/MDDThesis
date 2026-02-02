@@ -292,15 +292,43 @@ done
 # -----------------------------
 # 10. Imputation with MINIMAC4
 # -----------------------------
-minimac4 \
-  /ref/chr22.mvcf \
-  your_target_chr22.vcf.gz \
-  --map /ref/chr22.map \
-  --output chr22.imputed \
-  --threads 4
+cd /data
 
+cat > run_imputation_autosomes.sh << 'EOF'
+#!/bin/bash
 
+# Number of threads to use per chromosome
+THREADS=4
 
+# Loop over autosomes 1 to 22
+for chr in {1..22}; do
+    echo "Starting imputation for chr$chr..."
+
+    # Input phased target
+    TARGET="/data/PGRN_AMPS_autosomes_phased_chr${chr}.bcf"
+
+    # Reference MVCF
+    REF="/ref/chr${chr}.mvcf"
+
+    # Output file
+    OUT="/data/PGRN_AMPS_autosomes_imputed_chr${chr}.vcf.gz"
+
+    # Run Minimac4
+    minimac4 \
+        --refHaps "$REF" \
+        --haps "$TARGET" \
+        --prefix "${OUT%.vcf.gz}" \
+        --format GT,HDS,DS \
+        --threads "$THREADS"
+
+    echo "Finished chr$chr"
+done
+EOF
+
+# Make executable and run
+chmod +x run_imputation_autosomes.sh
+
+./run_imputation_autosomes.sh
 
 
 
