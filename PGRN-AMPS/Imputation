@@ -263,20 +263,16 @@ chmod +x filter_biallelic_all_chr.sh
 
 ./filter_biallelic_all_chr.sh
 
+# Redo Chr X because incorrect file name
+bcftools view -v snps -m2 -M2 \
+  ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz \
+  -Oz -o ALL.chrX.biallelic.vcf.gz
 
-
-
-
-
-
-
-
-
-
+bcftools index ALL.chrX.biallelic.vcf.gz
 
 
 # -----------------------------
-# 8. Use Docker to Prepare Files for Imputation
+# 9. Use Docker to Prepare Files for Imputation
 # -----------------------------
 # First, need to download MINIMAC4 for your computer setup and run it
 docker run -it --platform linux/amd64 \
@@ -285,8 +281,8 @@ docker run -it --platform linux/amd64 \
   -w /ref \
   minimac4
 
-# Loop to compress all chromosomes
-for chr in {1..22} X; do
+# Loop to compress all autosomes
+for chr in {1..22}; do
     echo "Compressing chr$chr to MVCF..."
     minimac4 --compress-reference /ref/ALL.chr${chr}.biallelic.vcf.gz > /ref/chr${chr}.mvcf
     echo "Done chr$chr"
@@ -294,7 +290,7 @@ done
 
 
 # -----------------------------
-# 9. Imputation with MINIMAC4
+# 10. Imputation with MINIMAC4
 # -----------------------------
 minimac4 \
   /ref/chr22.mvcf \
