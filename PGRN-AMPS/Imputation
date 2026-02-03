@@ -330,19 +330,22 @@ chmod +x run_imputation_autosomes.sh
 
 ./run_imputation_autosomes.sh
 
-
-
-
-
+# Exit Docker
+exit + Enter
 
 # -----------------------------
-# 4. Post-imputation QC (example)
+# 11. Post-imputation QC
 # -----------------------------
-# Convert dosages to PLINK
-for chr in autosomes chrX_females chrX_males; do
-  plink --vcf "$OUTPUT_DIR/PGRN_AMPS_${chr}_imputed.dose.vcf.gz" \
-        --make-bed \
-        --out "$OUTPUT_DIR/PGRN_AMPS_${chr}_imputed_PLINK"
+for chr in {1..22}; do
+  echo "Filtering chr${chr}..."
+
+  bcftools view \
+    -i 'INFO/R2>=0.8 && MAF>=0.05' \
+    PGRN_AMPS_autosomes_imputed_chr${chr}.dose.vcf.gz \
+    -Oz \
+    -o PGRN_AMPS_autosomes_imputed_chr${chr}.filtered.vcf.gz
+
+  bcftools index PGRN_AMPS_autosomes_imputed_chr${chr}.filtered.vcf.gz
+
+  echo "Done chr${chr}"
 done
-
-echo "Pre-phasing and imputation finished! Files are in $OUTPUT_DIR"
