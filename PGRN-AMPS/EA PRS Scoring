@@ -1,0 +1,94 @@
+# -----------------------------
+# 1. Merge all autosome VCF
+# -----------------------------
+# EA autosomes
+bcftools concat \
+    PGRN_AMPS_autosomes_imputed_chr{1..22}.filtered_EA_weights.vcf.gz \
+    -Oz -o PGRN_AMPS_autosomes_all_EA_weights.vcf.gz
+
+bcftools index PGRN_AMPS_autosomes_all_EA_weights.vcf.gz
+
+
+# -----------------------------
+# 2. Set variant ID in VCF to CHR:BP
+# -----------------------------
+# Autosomes
+bcftools annotate \
+  --set-id '%CHROM:%POS' \
+  PGRN_AMPS_autosomes_all_EA_weights.vcf.gz \
+  -Oz -o PGRN_AMPS_autosomes_all_EA_weights.id.vcf.gz
+
+bcftools index PGRN_AMPS_autosomes_all_EA_weights.id.vcf.gz
+
+# Chr X
+bcftools annotate \
+  --set-id '%CHROM:%POS' \
+  PGRN_AMPS_chrX_ACAN_filtered_EA_weights.vcf.gz \
+  -Oz -o PGRN_AMPS_chrX_EA_weights.id.vcf.gz
+
+bcftools index PGRN_AMPS_chrX_EA_weights.id.vcf.gz
+
+# CHECK
+bcftools query -f '%ID\n' PGRN_AMPS_autosomes_all_EA_weights.id.vcf.gz | head
+
+
+# -----------------------------
+# 3. Convert VCFs to PLINK format
+# -----------------------------
+# Autosomes
+plink \
+  --vcf PGRN_AMPS_autosomes_all_EA_weights.id.vcf.gz \
+  --double-id \
+  --make-bed \
+  --out EA_autosomes
+
+# Chr X
+plink \
+  --vcf PGRN_AMPS_chrX_EA_weights.id.vcf.gz \
+  --double-id \
+  --make-bed \
+  --out EA_chrX
+
+
+# -----------------------------
+# 4. Create PLINK Scoring File from Weights
+# -----------------------------
+awk 'NR>1 {print $2":"$3"\t"$4"\t"$6}' \
+  TopEA_SNPs_GRCh37_weights.txt > EA_weights.plink
+
+head EA_weights.plink
+
+
+# -----------------------------
+# 5. Fix Chr X BIM/Weights files (multiallelic issue)
+# -----------------------------
+awk '{
+  new_id = $1 ":" $4 ":" $5 ":" $6
+  print $1, new_id, $3, $4, $5, $6
+}' OFS="\t" EA_chrX.bim > EA_chrX.fixed.bim
+
+mv EA_chrX.bim EA_chrX.bim.backup
+mv EA_chrX.fixed.bim EA_chrX.bim
+
+# Create Chr X weight file with alleles in ID position
+## Extract Chr X from weights file
+awk 'NR==1 || $2==23' TopEA_SNPs_GRCh37_weights.txt > EA_weights_chrX.txt
+
+# Create PLINK file
+awk 'NR>1 {print $2":"$3":"$4":"$5, $4, $6}' EA_weights_chrX.txt > EA_weights_chrX.plink
+
+
+# -----------------------------
+# 5. PRS Scoring 
+# -----------------------------
+# Autosomes
+plink \
+  --bfile EA_autosomes \
+  --score EA_weights.plink 1 2 3 sum \
+  --out PRS_EA_autosomes
+
+# Chr X
+plink \
+  --bfile EA_chrX \
+  --score EA_weights_chrX.plink 1 2 3 sum \
+  --out PRS_EA_chrX
