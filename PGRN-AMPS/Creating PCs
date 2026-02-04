@@ -1,0 +1,32 @@
+# -----------------------------
+# 1. LD Prune autosomes files for EA and MA
+# -----------------------------
+# EA
+plink \
+  --bfile EA_autosomes \
+  --indep-pairwise 50 5 0.2 \
+  --out EA_autosomes_pruned
+
+# MA
+plink \
+  --bfile MA_autosomes \
+  --indep-pairwise 50 5 0.2 \
+  --out MA_autosomes_pruned
+
+
+# -----------------------------
+# 2. Generating PCs for EA and MA
+# -----------------------------
+# EA
+plink \
+  --bfile EA_autosomes \
+  --extract EA_autosomes_pruned.prune.in \
+  --pca 10 \
+  --out EA_autosomes_PCs
+
+# MA
+plink \
+  --bfile MA_autosomes \
+  --extract MA_autosomes_pruned.prune.in \
+  --pca 10 \
+  --out MA_autosomes_PCs
