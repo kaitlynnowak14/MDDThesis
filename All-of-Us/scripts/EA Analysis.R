@@ -1,4 +1,3 @@
-
 # 0. Load packages & set paths ####
 library(data.table)
 library(dplyr)
@@ -53,7 +52,7 @@ hist(master_final$ageonset,
 master_final$sex <- factor(master_final$sex,
                            levels = c("Male", "Female"))
 
-# ================================== Models ====================================
+# ================================== EA Models ====================================
 
 # 0. Covariates Only ####
 model_cov <- lm(ageonset ~ pc_1 + pc_2 + pc_3 + pc_4,
@@ -289,9 +288,13 @@ ggplot(newdata, aes(x = ses_combined, y = fit, color = sex, fill = sex)) +
   theme_thesis
 
 # 5. Figure 5: EA PRS x Sex
-ggplot(master_final, aes(x = EA_PRS_z, y = ageonset, color = sex)) +
-  geom_point(alpha = 0.4) +
-  geom_smooth(method = "lm", se = FALSE, linewidth = 1.2) +
+ggplot(master_final, aes(x = EA_PRS_z, y = ageonset)) +
+  
+  # MA PRS distribution (background signal)
+  geom_point(alpha = 0.4, color = col_EA) +
+  
+  # sex-specific fitted lines
+  geom_smooth(aes(color = sex), method = "lm", se = FALSE, linewidth = 1.2) +
   
   scale_color_manual(values = c(
     "Male" = col_male,
@@ -304,6 +307,7 @@ ggplot(master_final, aes(x = EA_PRS_z, y = ageonset, color = sex)) +
     y = "Age of MDD Onset (Years)",
     color = "Sex"
   ) +
+  
   theme_thesis
 
 # Figure 6: EA PRS x SES ####
@@ -315,10 +319,8 @@ master_final$ses_group <- ifelse(
 
 ggplot(master_final, aes(x = EA_PRS_z, y = ageonset)) +
   
-  # PRS signal (keep blue as identity cue)
   geom_point(alpha = 0.35, color = col_EA) +
   
-  # SES stratification via lines
   geom_smooth(
     aes(color = ses_group),
     method = "lm",
@@ -332,7 +334,7 @@ ggplot(master_final, aes(x = EA_PRS_z, y = ageonset)) +
   )) +
   
   labs(
-    title = paste0(dataset_label, ": EA PRS × Socioeconomic Status Interaction on Age of MDD Onset"),
+    title = paste0(dataset_label, ": EA PRS × SES Stratified Association on Age of MDD Onset"),
     x = "EA Polygenic Risk Score (Z)",
     y = "Age of MDD Onset (Years)",
     color = "SES Group"
