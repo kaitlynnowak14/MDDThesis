@@ -40,6 +40,8 @@ sd_age   <- sd(master_final$ageonset, na.rm = TRUE)
 cat("Age of onset:", round(mean_age,1), "±", round(sd_age,1), "years\n")
 
 # Histogram
+col_other <- "grey60"
+
 hist(master_final$ageonset,
      breaks = 20,
      xlab = "Age of Onset (Years)",
@@ -311,9 +313,18 @@ master_final$ses_group <- ifelse(
   "Lower SES"
 )
 
-ggplot(master_final, aes(x = EA_PRS_z, y = ageonset, color = ses_group)) +
-  geom_point(alpha = 0.35) +
-  geom_smooth(method = "lm", se = FALSE, linewidth = 1.2) +
+ggplot(master_final, aes(x = EA_PRS_z, y = ageonset)) +
+  
+  # PRS signal (keep blue as identity cue)
+  geom_point(alpha = 0.35, color = col_EA) +
+  
+  # SES stratification via lines
+  geom_smooth(
+    aes(color = ses_group),
+    method = "lm",
+    se = FALSE,
+    linewidth = 1.2
+  ) +
   
   scale_color_manual(values = c(
     "Lower SES" = col_other,
@@ -326,4 +337,5 @@ ggplot(master_final, aes(x = EA_PRS_z, y = ageonset, color = ses_group)) +
     y = "Age of MDD Onset (Years)",
     color = "SES Group"
   ) +
+  
   theme_thesis
