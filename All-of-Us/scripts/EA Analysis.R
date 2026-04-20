@@ -1,3 +1,4 @@
+
 # 0. Load packages & set paths ####
 library(data.table)
 library(dplyr)
@@ -44,7 +45,7 @@ col_other <- "grey60"
 hist(master_final$ageonset,
      breaks = 20,
      xlab = "Age of Onset (Years)",
-     main = "Distribution of Age of Onset",
+     main = "All of Us: Distribution of Age of Onset",
      col = col_other,
      border = "white")
 
@@ -55,35 +56,40 @@ master_final$sex <- factor(master_final$sex,
 # ================================== EA Models ====================================
 
 # 0. Covariates Only ####
-model_cov <- lm(ageonset ~ pc_1 + pc_2 + pc_3 + pc_4,
+model_cov <- lm(ageonset ~ pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                  pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                 data = master_final)
 
 summary(model_cov)
 
 # 1. PRS Only ####
 model_prs <- lm(ageonset ~ EA_PRS_z +
-                  pc_1 + pc_2 + pc_3 + pc_4,
+                  pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                  pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                 data = master_final)
 
 summary(model_prs)
 
 # 2. Sex Only ####
 model_sex <- lm(ageonset ~ sex +
-                  pc_1 + pc_2 + pc_3 + pc_4,
+                  pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                  pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                 data = master_final)
 
 summary(model_sex)
 
 # 3. SES Only ####
 model_ses <- lm(ageonset ~ ses_combined +
-                  pc_1 + pc_2 + pc_3 + pc_4,
+                  pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                  pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                 data = master_final)
 
 summary(model_ses)
 
 # 4. Additive Model (no interactions) ####
 model_additive <- lm(ageonset ~ EA_PRS_z + sex + ses_combined +
-                       pc_1 + pc_2 + pc_3 + pc_4,
+                       pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                       pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                      data = master_final)
 
 summary(model_additive)
@@ -91,7 +97,8 @@ summary(model_additive)
 # 5. PRS x Sex Interaction ####
 model_prs_sex <- lm(ageonset ~ EA_PRS_z * sex +
                       ses_combined +
-                      pc_1 + pc_2 + pc_3 + pc_4,
+                      pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                      pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                     data = master_final)
 
 summary(model_prs_sex)
@@ -99,7 +106,8 @@ summary(model_prs_sex)
 # 6. PRS x SES Interaction ####
 model_prs_ses <- lm(ageonset ~ EA_PRS_z * ses_combined +
                       sex +
-                      pc_1 + pc_2 + pc_3 + pc_4,
+                      pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                      pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                     data = master_final)
 
 summary(model_prs_ses)
@@ -107,7 +115,8 @@ summary(model_prs_ses)
 # 7. Sex x SES Interaction ####
 model_sex_ses <- lm(ageonset ~ sex * ses_combined +
                       EA_PRS_z +
-                      pc_1 + pc_2 + pc_3 + pc_4,
+                      pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                      pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                     data = master_final)
 
 summary(model_sex_ses)
@@ -116,14 +125,16 @@ summary(model_sex_ses)
 model_full_2way <- lm(ageonset ~ EA_PRS_z * sex +
                         EA_PRS_z * ses_combined +
                         sex * ses_combined +
-                        pc_1 + pc_2 + pc_3 + pc_4,
+                        pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                        pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                       data = master_final)
 
 summary(model_full_2way)
 
 # 9. Full 3-Way Interaction Model ####
 model_full_3way <- lm(ageonset ~ EA_PRS_z * sex * ses_combined +
-                   pc_1 + pc_2 + pc_3 + pc_4,
+                        pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                        pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                  data = master_final)
 
 summary(model_full_3way)
@@ -209,7 +220,7 @@ ggplot(master_final, aes(x = EA_PRS_z, y = ageonset)) +
   geom_smooth(method = "lm", se = TRUE, color = col_other, linewidth = 1.2) +
   annotate("text",
            x = Inf, y = -Inf,
-           label = paste0("R² = ", round(r2_prs, 3)),
+           label = paste0("R² = ", round(r2_prs, 4)),
            hjust = 1.1, vjust = -0.8, size = 4) +
   labs(
     title = paste0(dataset_label, ": EA Polygenic Risk Score and Age of MDD Onset"),
@@ -248,7 +259,8 @@ ggplot(master_final, aes(x = sex, y = ageonset)) +
 
 # 4. Figure 4: Sex x SES Interaction
 model_sex_ses <- lm(ageonset ~ sex * ses_combined +
-                      EA_PRS_z + pc_1 + pc_2 + pc_3 + pc_4,
+                      EA_PRS_z + pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
+                      pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
                     data = master_final)
 
 newdata <- expand.grid(
@@ -257,7 +269,8 @@ newdata <- expand.grid(
                      length.out = 100),
   sex = unique(master_final$sex),
   EA_PRS_z = 0,
-  pc_1 = 0, pc_2 = 0, pc_3 = 0, pc_4 = 0
+  pc_1 = 0, pc_2 = 0, pc_3 = 0, pc_4 = 0, pc_5 = 0,  pc_6 = 0, pc_7 = 0,  pc_8 = 0,
+  pc_9 = 0, pc_10 = 0, pc_11 = 0, pc_12 = 0, pc_13 = 0, pc_14 = 0, pc_15 = 0, pc_16 = 0
 )
 
 pred <- predict(model_sex_ses, newdata, se.fit = TRUE)
