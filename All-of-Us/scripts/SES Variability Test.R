@@ -16,14 +16,19 @@ master_final %>%
 
 # Visualize SES distribution
 ggplot(master_final, aes(x = ses_combined)) +
-  geom_histogram(bins = 30, fill = "steelblue", alpha = 0.7) +
-  labs(title = "Distribution of Combined SES Score",
-       x = "SES (combined)",
-       y = "Count")
-
-ggplot(master_final, aes(x = ses_combined)) +
-  geom_density(fill = "steelblue", alpha = 0.4) +
-  labs(title = "SES Density Plot")
+  geom_histogram(
+    bins = 30,
+    fill = col_other,
+    alpha = 0.6,
+    color = "white",
+    linewidth = 0.3
+  ) +
+  labs(
+    title = paste0(dataset_label, ": Distribution of Socioeconomic Status"),
+    x = "Socioeconomic Status (0–1 Scaled)",
+    y = "Count"
+  ) +
+  theme_thesis
 
 master_final %>%
   summarise(
