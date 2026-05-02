@@ -44,95 +44,16 @@ MA_model_additive <- lm(ageonset ~ MA_PRS_z + sex + ses_combined +
 
 summary(MA_model_additive)
 
-# 5. PRS x Sex Interaction ####
-MA_model_prs_sex <- lm(ageonset ~ MA_PRS_z * sex +
-                      ses_combined +
-                        pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
-                        pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
-                    data = master_final)
-
-summary(MA_model_prs_sex)
-
-# 6. PRS x SES Interaction ####
-MA_model_prs_ses <- lm(ageonset ~ MA_PRS_z * ses_combined +
-                      sex +
-                        pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
-                        pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
-                    data = master_final)
-
-summary(MA_model_prs_ses)
-
-# 7. Sex x SES Interaction ####
-MA_model_sex_ses <- lm(ageonset ~ sex * ses_combined +
-                      MA_PRS_z +
-                        pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
-                        pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
-                    data = master_final)
-
-summary(MA_model_sex_ses)
-
-# 8. Full 2-Way Interaction Model ####
-MA_model_full_2way <- lm(ageonset ~ MA_PRS_z * sex +
-                        MA_PRS_z * ses_combined +
-                        sex * ses_combined +
-                          pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
-                          pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
-                      data = master_final)
-
-summary(MA_model_full_2way)
-
-# 9. Full 3-Way Interaction Model ####
-MA_model_full_3way <- lm(ageonset ~ MA_PRS_z * sex * ses_combined +
-                           pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
-                           pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
-                      data = master_final)
-
-summary(MA_model_full_3way)
-
 # ======================== Comparing Models ====================================
 
 # 1. Main effects likelihood ratio test (LRT)
-anova(MA_model_cov, MA_model_prs) 
-anova(MA_model_cov, MA_model_sex)
-anova(MA_model_cov, MA_model_ses)
+anova(MA_model_cov, MA_model_additive)
 anova(MA_model_prs, MA_model_additive)
-
-# 2. Interaction terms LRT
-anova(MA_model_additive, MA_model_prs_sex)
-anova(MA_model_additive, MA_model_prs_ses)
-anova(MA_model_additive, MA_model_sex_ses)
-
-# 3. Higher-order models LRT
-anova(MA_model_additive, MA_model_full_2way)
-anova(MA_model_full_2way, MA_model_full_3way)
+anova(MA_model_sex, MA_model_additive)
+anova(MA_model_ses, MA_model_additive)
 
 # 4. Akaike Information Criterion (AIC) model comparison (lower AIC = better model)
-AIC(MA_model_cov, MA_model_prs, MA_model_additive, MA_model_full_2way, MA_model_full_3way)
-
-AIC(MA_model_additive, MA_model_prs_sex, MA_model_prs_ses, MA_model_sex_ses, MA_model_full_2way)
-
-# 5. Bayesian Information Criterion (BIC) model comparison
-BIC(MA_model_cov, MA_model_prs, MA_model_additive, MA_model_full_2way, MA_model_full_3way)
-
-BIC(MA_model_additive, MA_model_prs_sex, MA_model_prs_ses, MA_model_sex_ses, MA_model_full_2way)
-
-# 6. Root Mean Squared Error (RMSE) (measured prediciton error)
-rmse <- function(model) {
-  sqrt(mean(residuals(model)^2))
-}
-
-MA_rmse_values <- data.frame(
-  Model = c("Covariates", "PRS", "Additive", "Full 2-way", "Full 3-way"),
-  RMSE = c(
-    rmse(MA_model_cov),
-    rmse(MA_model_prs),
-    rmse(MA_model_additive),
-    rmse(MA_model_full_2way),
-    rmse(MA_model_full_3way)
-  )
-)
-
-MA_rmse_values
+AIC(MA_model_cov, MA_model_prs, MA_model_sex, MA_model_ses, MA_model_additive)
 
 # ======================== Creating Figures ====================================
 
@@ -159,29 +80,31 @@ theme_thesis <- theme_classic(base_size = 14) +
     axis.line = element_line(linewidth = 0.8)
   )
 
-# 1. Figure 1: EA PRS & Age of Onset ####
+# 1. Figure 1: MA PRS (Unadjusted) ####
 MA_model_prs_simple <- lm(ageonset ~ MA_PRS_z, data = master_final)
 MA_r2_prs <- summary(MA_model_prs_simple)$r.squared
 
-ggplot(master_final, aes(x = MA_PRS_z, y = ageonset)) +
+MA_fig1 <- ggplot(master_final, aes(x = MA_PRS_z, y = ageonset)) +
   geom_point(alpha = 0.5, size = 1.5, color = col_MA) +
-  geom_smooth(method = "lm", se = TRUE, color = col_other, linewidth = 1.2) +
+  geom_smooth(method = "lm", se = TRUE, color = col_MA, linewidth = 1.2) +
   annotate("text",
            x = Inf, y = -Inf,
            label = paste0("R² = ", round(MA_r2_prs, 3)),
            hjust = 1.1, vjust = -0.8, size = 4) +
   labs(
-    title = paste0(dataset_label, ": MA Polygenic Risk Score and Age of MDD Onset"),
+    title = paste0(dataset_label, ": MA PRS and Age of MDD Onset (Unadjusted)"),
     x = "MA Polygenic Risk Score (Z)",
     y = "Age of MDD Onset (Years)"
   ) +
   theme_thesis
 
+print(MA_fig1)
+
 # 2. Figure 2: SES & Age of Onset ####
 MA_model_ses_simple <- lm(ageonset ~ ses_combined, data = master_final)
 MA_r2_ses <- summary(MA_model_ses_simple)$r.squared
 
-ggplot(master_final, aes(x = ses_combined, y = ageonset)) +
+MA_fig2 <- ggplot(master_final, aes(x = ses_combined, y = ageonset)) +
   geom_point(alpha = 0.5, size = 1.5, color = col_other) +
   geom_smooth(method = "lm", se = TRUE, color = col_other, linewidth = 1.2) +
   annotate("text",
@@ -189,14 +112,16 @@ ggplot(master_final, aes(x = ses_combined, y = ageonset)) +
            label = paste0("R² = ", round(MA_r2_ses, 3)),
            hjust = 1.1, vjust = -0.8, size = 4) +
   labs(
-    title = paste0(dataset_label, ": Socioeconomic Status and Age of MDD Onset"),
+    title = paste0(dataset_label, ": SES and Age of MDD Onset (Unadjusted)"),
     x = "Socioeconomic Status (0–1 Scaled)",
     y = "Age of MDD Onset (Years)"
   ) +
   theme_thesis
 
+print(MA_fig2)
+
 # 3. Figure 3: Sex Differences
-ggplot(master_final, aes(x = sex, y = ageonset)) +
+MA_fig3 <- ggplot(master_final, aes(x = sex, y = ageonset)) +
   geom_boxplot(fill = col_other, alpha = 0.6, linewidth = 1) +
   labs(
     title = paste0(dataset_label, ": Sex Differences in Age of MDD Onset"),
@@ -205,101 +130,40 @@ ggplot(master_final, aes(x = sex, y = ageonset)) +
   ) +
   theme_thesis
 
-# 4. Figure 4: Sex x SES Interaction
-MA_model_sex_ses <- lm(ageonset ~ sex * ses_combined +
-                      MA_PRS_z + pc_1 + pc_2 + pc_3 + pc_4 + pc_5 + pc_6 + pc_7 + pc_8 +
-                        pc_9 + pc_10 + pc_11 + pc_12 + pc_13 + pc_14 + pc_15 + pc_16,
-                    data = master_final)
+print(MA_fig3)
 
-MA_newdata <- expand.grid(
-  ses_combined = seq(min(master_final$ses_combined, na.rm = TRUE),
-                     max(master_final$ses_combined, na.rm = TRUE),
-                     length.out = 100),
-  sex = unique(master_final$sex),
-  MA_PRS_z = 0,
-  pc_1 = 0, pc_2 = 0, pc_3 = 0, pc_4 = 0, pc_5 = 0,  pc_6 = 0, pc_7 = 0,  pc_8 = 0,
-  pc_9 = 0, pc_10 = 0, pc_11 = 0, pc_12 = 0, pc_13 = 0, pc_14 = 0, pc_15 = 0, pc_16 = 0
+# 4.  Figure 4: Main Effects Model Visualization
+library(ggeffects)
+
+MA_prs_effect <- ggpredict(MA_model_additive, terms = "MA_PRS_z")
+MA_prs_df <- as.data.frame(MA_prs_effect)
+
+MA_fig4 <- ggplot(MA_prs_df, aes(x = x, y = predicted)) +
+  geom_line(color = col_MA, linewidth = 1.2) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
+              fill = col_MA, alpha = 0.2) +
+  labs(
+    title = paste0(dataset_label, ": Adjusted Effect of MA PRS on Age of MDD Onset"),
+    x = "MA Polygenic Risk Score (Z)",
+    y = "Predicted Age of Onset"
+  ) +
+  theme_thesis
+
+print(MA_fig4)
+
+# 5. Figure 5: Model Comparison
+MA_model_r2 <- data.frame(
+  MA_Model = c("Covariates", "PRS", "Sex", "SES", "Additive"),
+  MA_R2 = c(0.0373, 0.03774, 0.04109, 0.04881, 0.0534)
 )
 
-MA_pred <- predict(MA_model_sex_ses, MA_newdata, se.fit = TRUE)
-MA_newdata$fit <- MA_pred$fit
-MA_newdata$lower <- MA_pred$fit - 1.96 * MA_pred$se.fit
-MA_newdata$upper <- MA_pred$fit + 1.96 * MA_pred$se.fit
-
-ggplot(MA_newdata, aes(x = ses_combined, y = fit, color = sex, fill = sex)) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.15, color = NA) +
-  geom_line(linewidth = 1.3) +
-  
-  scale_color_manual(values = c(
-    "Male" = col_male,
-    "Female" = col_female
-  )) +
-  scale_fill_manual(values = c(
-    "Male" = col_male,
-    "Female" = col_female
-  )) +
-  
+MA_fig5 <- ggplot(MA_model_r2, aes(x = MA_Model, y = MA_R2)) +
+  geom_col(fill = "grey50") +
   labs(
-    title = paste0(dataset_label, ": Sex × Socioeconomic Status Interaction on Age of MDD Onset"),
-    x = "Socioeconomic Status (0–1 scaled)",
-    y = "Predicted Age of MDD Onset (Years)",
-    color = "Sex",
-    fill = "Sex"
+    title = paste0(dataset_label, ": MA Model R² Comparison"),
+    x = "MA Model",
+    y = "MA R²"
   ) +
   theme_thesis
 
-# 5. Figure 5: EA PRS x Sex
-ggplot(master_final, aes(x = MA_PRS_z, y = ageonset)) +
-  
-  # MA PRS distribution (background signal)
-  geom_point(alpha = 0.4, color = col_MA) +
-  
-  # sex-specific fitted lines
-  geom_smooth(aes(color = sex), method = "lm", se = FALSE, linewidth = 1.2) +
-  
-  scale_color_manual(values = c(
-    "Male" = col_male,
-    "Female" = col_female
-  )) +
-  
-  labs(
-    title = paste0(dataset_label, ": MA PRS × Sex Interaction on Age of MDD Onset"),
-    x = "MA Polygenic Risk Score (Z)",
-    y = "Age of MDD Onset (Years)",
-    color = "Sex"
-  ) +
-  
-  theme_thesis
-
-# Figure 6: MA PRS x SES ####
-# Grouping already run!!
-# master_final$ses_group <- ifelse(
-#  master_final$ses_combined >= median(master_final$ses_combined, na.rm = TRUE),
-#  "Higher SES",
-#  "Lower SES"
-# )
-
-ggplot(master_final, aes(x = MA_PRS_z, y = ageonset)) +
-  
-  geom_point(alpha = 0.35, color = col_MA) +
-  
-  geom_smooth(
-    aes(color = ses_group),
-    method = "lm",
-    se = FALSE,
-    linewidth = 1.2
-  ) +
-  
-  scale_color_manual(values = c(
-    "Lower SES" = col_other,
-    "Higher SES" = "grey30"
-  )) +
-  
-  labs(
-    title = paste0(dataset_label, ": MA PRS × SES Stratified Association on Age of MDD Onset"),
-    x = "MA Polygenic Risk Score (Z)",
-    y = "Age of MDD Onset (Years)",
-    color = "SES Group"
-  ) +
-  
-  theme_thesis
+print(MA_fig5)
