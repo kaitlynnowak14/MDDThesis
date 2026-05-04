@@ -1,14 +1,30 @@
 # 1. PRS Density ####
 PRS_density <- ggplot() +
-  geom_density(data = master_final, aes(x = EA_PRS_z), fill = col_EA, alpha = 0.4) +
-  geom_density(data = master_final, aes(x = MA_PRS_z), fill = col_MA, alpha = 0.4) +
+  geom_density(
+    data = master_final,
+    aes(x = EA_PRS_z, fill = "EA PRS"),
+    alpha = 0.4
+  ) +
+  geom_density(
+    data = master_final,
+    aes(x = MA_PRS_z, fill = "MA PRS"),
+    alpha = 0.4
+  ) +
+  scale_fill_manual(
+    values = c(
+      "EA PRS" = col_EA,
+      "MA PRS" = col_MA
+    ),
+    name = " "
+  ) +
   coord_cartesian(xlim = x_prs_lim) +
   labs(
     title = paste0(dataset_label, ": Distribution of Polygenic Risk Scores"),
     x = "PRS (Z-score)",
     y = "Density"
   ) +
-  theme_thesis
+  theme_thesis +
+  theme(legend.position = "top")
 
 print(PRS_density)
 
