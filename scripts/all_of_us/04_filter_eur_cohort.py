@@ -1,5 +1,22 @@
+# ============================================================
+# Title: EUR Ancestry Filtering Script
+# Dataset: All of Us (European Ancestry subset)
+#
+# Description:
+#   - Loads European ancestry subject IDs from Hail table
+#   - Filters phenotype dataframe to retain EUR-only samples
+#   - Ensures ID type consistency between Hail and pandas
+#
+# Inputs:
+#   - eur_subject_ids.ht (Hail Table)
+#   - merged_df (pandas DataFrame; must exist in memory or be loaded)
+#
+# Output:
+#   - Filtered merged_df (EUR-only cohort)
+# =============================================================
+
 # =====================================================
-# 3. Restrict Final Datasets to Those Identify as EUR Through PCA
+# 1. Restrict Final Datasets to Those Identify as EUR Through PCA
 # =====================================================
 
 # Load Hail table containing European subject IDs
