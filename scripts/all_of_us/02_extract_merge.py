@@ -1038,7 +1038,144 @@ merged_df = merged_df[merged_df['person_id'].isin(eur_ids)].copy()
 print("Number of participants after EUR/genomic QC filter:", merged_df.shape[0])
 
 # =====================================================
-# 4. 
+# 4. Creating Age of Onset Variable
 # =====================================================
 
+# ---- Load Libraries ----
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.stats import skew, kurtosis
+import os
 
+# ---- Ensure Cloud Storage Bucket Created ----
+bucket = os.getenv("WORKSPACE_BUCKET")
+if bucket is None:
+    raise ValueError("WORKSPACE_BUCKET environment variable not found.")
+
+# ---- Construct Age of Onset ----
+# Convert birth date and conditon date to datetime format
+merged_df['date_of_birth'] = pd.to_datetime(merged_df['date_of_birth'])
+merged_df['condition_start_datetime'] = pd.to_datetime(merged_df['condition_start_datetime'])
+
+# Store dataset size before filtering missing values
+before_count = len(merged_df)
+
+# Compute age of onset in years and floor the variable 
+merged_df['age_of_onset'] = np.floor(
+    (merged_df['condition_start_datetime'] - merged_df['date_of_birth']).dt.days / 365.25
+).astype('Int64')
+
+# ---- Remove Missing Age of Onset Values (if exist) ----
+# Drop participants without valid age of onset values 
+merged_df = merged_df.dropna(subset=['age_of_onset'])
+
+# Track dataset size after filtering
+after_count = len(merged_df)
+
+# Compute number of excluded participant
+dropped_rows = before_count - after_count
+
+print(f"Total rows before: {before_count}")
+print(f"Total rows after: {after_count}")
+print(f"Dropped rows (missing age_of_onset): {dropped_rows}")
+
+# ---- Export Updated Dataset With Age of Onset ----
+csv_path = f"{bucket}/exports/merged_with_age_of_onset.csv"
+merged_df.to_csv(csv_path, index=False)
+print(f"Saved merged dataset with age_of_onset to: {csv_path}")
+
+# ---- Data Inspection ----
+display(merged_df.head(10))
+
+# =====================================================
+# 4. Creating Age at Survey Variable
+# =====================================================
+
+# ---- Load Libraries ----
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+# Enable inline plots in Jupyter
+%matplotlib inline
+
+# ---- Compute Age at Survey Variable ----
+# Ensure date variables are in correct datetime format
+merged_df['date_of_birth'] = pd.to_datetime(merged_df['date_of_birth'], errors='coerce')
+merged_df['survey_datetime'] = pd.to_datetime(merged_df['survey_datetime'], errors='coerce')
+
+# Calculate age at time of survey in whole years
+merged_df['age_at_survey'] = ((merged_df['survey_datetime'] - merged_df['date_of_birth']).dt.days // 365).astype('Int64')
+
+# =====================================================
+# 5. Coding Phenotype Variables & Hail Conversion
+# =====================================================
+
+# ---- Load Libraries ----
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy.stats import skew, kurtosis
+from sklearn.preprocessing import StandardScaler
+import hail as hl
+import os
+
+# ---- Define Helper Function for Exporting Data & Figures ----
+bucket = os.getenv("WORKSPACE_BUCKET")
+if bucket is None:
+    raise ValueError("WORKSPACE_BUCKET environment variable not found.")
+
+def save_to_bucket(df=None, fig=None, filename="output.csv", show_fig=True):
+    local_path = filename
+    if df is not None:
+        df.to_csv(local_path, index=False)
+        print(f"DataFrame saved locally as {filename}")
+        display(df.head())  # Show first few rows in notebook
+    if fig is not None:
+        fig.savefig(local_path, bbox_inches='tight')
+        print(f"Figure saved locally as {filename}")
+        if show_fig:
+            display(fig)  # Show figure inline
+    # Upload to cloud bucket
+    os.system(f"gsutil cp {local_path} {bucket}/{filename}")
+    print(f"Uploaded {filename} to {bucket}")
+
+# ---- Convert All Datetime Columns to String for Hail Conversion ----
+for col in merged_df.columns:
+    if pd.api.types.is_datetime64_any_dtype(merged_df[col]):
+        merged_df[col] = merged_df[col].astype(str)
+
+# ---- Encoding Categorical Variables ----
+# Sex
+merged_df['sex_binary'] = merged_df['sex_at_birth'].map({'Male': 0, 'Female': 1})
+
+# Education
+education_order = {
+    "Never Attended": 0, "One Through Four": 0, "Five Through Eight": 0, "Nine Through Eleven": 0,
+    "Twelve Or GED": 1, "College One to Three": 2, "College Graduate": 3, "Advanced Degree": 4
+}
+merged_df['education_ord'] = merged_df['Highest Grade'].map(education_order)
+
+# Employment
+employment_order = {
+    "Unable To Work": 0, "Out Of Work One Or More": 1, "Out Of Work Less Than One": 1,
+    "Homemaker": 0, "Student": 0, "Employed For Wages": 2, "Self Employed": 2, "Retired": 0
+}
+merged_df['employment_ord'] = merged_df['Employment Status'].map(employment_order)
+
+# Marital Status
+marital_order_ord = {
+    "Never Married": 0, "Separated": 1, "Divorced": 1, "Widowed": 1,
+    "Living With Partner": 2, "Married": 2
+}
+merged_df['marital_ord'] = merged_df['Current Marital Status'].map(marital_order_ord)
+
+# Save to bucket
+save_to_bucket(df=merged_df, filename="all_of_us_final_dataset.csv")
+
+# ---- Convert to Hail ----
+ht_pheno = hl.Table.from_pandas(merged_df, key='person_id')
+
+# Check Hail Table
+display(ht_pheno.head(5))
