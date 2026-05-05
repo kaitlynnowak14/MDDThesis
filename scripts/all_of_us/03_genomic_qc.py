@@ -1,19 +1,29 @@
 # ============================================================
-# Title: All of Us Genomic Data QC
+# Title: All of Us Genomic Data QC Pipeline
 # Dataset: All of Us (European Ancestry subset)
 #
 # Description:
-#   - Extract condition, person, and survey data from BigQuery
-#   - Process survey + conditon data
-#   - Merge into final phenotype dataset
-#   - Restrict to QC-passed EUR participants
+#   - Load genotype data from All of Us WGS ACAF callset
+#   - Perform sample-level QC (related + flagged individuals)
+#   - Subset to predefined MDD thesis cohort
+#   - Annotate ancestry using All of Us PCA-based predictions
+#   - Restrict analysis to European ancestry samples
+#   - Extract and save genetic PCs for downstream analysis
+#   - Load and harmonize PRS weights (EA + MA)
+#   - Perform liftover (GRCh37 → GRCh38)
+#   - Split PRS weights and genotype data by chromosome
 #
 # Output:
-#   data/processed/all_of_us/all_of_us_merged.csv
+#   - EUR subject IDs (Hail Table)
+#   - Cohort PCs (CSV)
+#   - Lifted PRS weights (GRCh38, chromosome-level Hail Tables)
+#   - Chromosome-split genotype matrices (optional downstream PRS input)
 #
 # Notes: 
-#   - Cohort predefined using All of Us Cohort Builder
-#   - Data cannot be shared due to access restrictions
+#   - Cohort is predefined using All of Us Cohort Builder
+#   - All data are controlled-access and cannot be shared
+#   - Pipeline is designed for reproducibility within Terra environment
+#   - Weights files comes from Trans-ancestry GWAS (Adams et al., 2025)
 # =============================================================
 
 # =====================================================
