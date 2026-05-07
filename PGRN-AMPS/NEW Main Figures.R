@@ -6,9 +6,7 @@ library(broom)
 library(ggpattern)
 
 # 1. Set colors + theme ####
-col_EA <- "steelblue"
-col_MA <- "indianred3"
-col_other <- "#1A8F5A"
+col_PGRN <- "steelblue"
 
 theme_thesis <- theme_classic(base_size = 14) +
   theme(
@@ -35,8 +33,8 @@ model_ses <- lm(ageonset ~ ses_combined, data = master_final)
 r2_ses <- summary(model_ses)$r.squared
 
 fig_ses <- ggplot(master_final, aes(x = ses_combined, y = ageonset)) +
-  geom_point(alpha = 0.4, size = 1.4, color = col_other) +
-  geom_smooth(method = "lm", se = TRUE, color = "black", linewidth = 1.1) +
+  geom_point(alpha = 0.4, size = 1.4, color = col_PGRN) +
+  geom_smooth(method = "lm", se = TRUE, color = col_PGRN, linewidth = 1.1) +
   coord_cartesian(xlim = x_ses_lim, ylim = y_age_lim) +
   annotate("text",
            x = Inf, y = -Inf,
@@ -54,7 +52,7 @@ print(fig_ses)
 # 2. Sex ####
 fig_sex <- ggplot(master_final, aes(x = sex, y = ageonset, fill = sex)) +
   geom_boxplot(alpha = 0.6, linewidth = 0.9, outlier.shape = NA) +
-  scale_fill_manual(values = c("Male" = col_other, "Female" = col_other)) +
+  scale_fill_manual(values = c("Male" = col_PGRN, "Female" = col_PGRN)) +
   coord_cartesian(ylim = y_age_lim) +
   labs(
     title = paste0(dataset_label, ": Sex Differences in Age of Onset (Unadjusted)"),
@@ -78,7 +76,6 @@ fig_sex_pattern <- ggplot(master_final, aes(x = sex, y = ageonset)) +
     linewidth = 0.9,
     outlier.shape = NA,
     
-    # pattern settings
     pattern_density = 0.4,
     pattern_spacing = 0.04,
     pattern_angle = 45,
@@ -86,8 +83,8 @@ fig_sex_pattern <- ggplot(master_final, aes(x = sex, y = ageonset)) +
   ) +
   
   scale_fill_manual(values = c(
-    "Male" = col_other,
-    "Female" = col_other
+    "Male" = col_PGRN,
+    "Female" = col_PGRN
   )) +
   
   scale_pattern_manual(values = c(
@@ -110,59 +107,76 @@ fig_sex_pattern <- ggplot(master_final, aes(x = sex, y = ageonset)) +
 
 print(fig_sex_pattern)
 
-# 3. PRS (EA vs MA) ####
-model_ma <- lm(ageonset ~ MA_PRS_z, data = master_final)
-model_ea <- lm(ageonset ~ EA_PRS_z, data = master_final)
-
-r2_ma <- summary(model_ma)$r.squared
-r2_ea <- summary(model_ea)$r.squared
+# 3. PRS ####
+y_age_lim <- c(15,60)
 
 fig_prs <- ggplot(master_final, aes(y = ageonset)) +
   
-  # EA PRS
+  # EA PRS (black solid)
   geom_smooth(
-    aes(x = EA_PRS_z, color = "EA PRS", fill = "EA PRS"),
+    aes(
+      x = EA_PRS_z,
+      color = "EA",
+      fill = "EA",
+      linetype = "EA"
+    ),
     method = "lm",
     se = TRUE,
     linewidth = 1.1,
-    alpha = 0.2
+    alpha = 0.15
   ) +
   
-  # MA PRS
+  # MA PRS (blue dashed)
   geom_smooth(
-    aes(x = MA_PRS_z, color = "MA PRS", fill = "MA PRS"),
+    aes(
+      x = MA_PRS_z,
+      color = "MA",
+      fill = "MA",
+      linetype = "MA"
+    ),
     method = "lm",
     se = TRUE,
     linewidth = 1.1,
-    alpha = 0.2
+    alpha = 0.15
   ) +
   
   scale_color_manual(values = c(
-    "EA PRS" = col_EA,
-    "MA PRS" = col_MA
+    "EA" = "black",
+    "MA" = col_PGRN
   )) +
   
   scale_fill_manual(values = c(
-    "EA PRS" = col_EA,
-    "MA PRS" = col_MA
+    "EA" = "black",
+    "MA" = col_PGRN
+  )) +
+  
+  scale_linetype_manual(values = c(
+    "EA" = "solid",
+    "MA" = "dashed"
   )) +
   
   coord_cartesian(xlim = x_prs_lim, ylim = y_age_lim) +
   
-  annotate("text",
-           x = Inf, y = -Inf,
-           label = paste0(
-             "EA R² = ", round(r2_ea, 3),
-             "\nMA R² = ", round(r2_ma, 3)
-           ),
-           hjust = 1.1, vjust = -0.8, size = 4) +
+  annotate(
+    "text",
+    x = x_prs_lim[1] + 0.3,
+    y = 16,
+    label = paste0(
+      "EA R² = ", round(r2_ea, 3),
+      "\nMA R² = ", round(r2_ma, 3)
+    ),
+    hjust = 0,
+    vjust = 0,
+    size = 4
+  ) +
   
   labs(
     title = paste0(dataset_label, ": PRS and Age of Onset (Unadjusted)"),
     x = "Polygenic Risk Score (Z)",
     y = "Age of MDD Onset (Years)",
     color = "PRS Type",
-    fill = "PRS Type"
+    fill = "PRS Type",
+    linetype = "PRS Type"
   ) +
   
   theme_thesis
@@ -196,8 +210,8 @@ fig_nested_r2 <- ggplot(model_r2, aes(x = Model, y = R2, group = Type)) +
   
   # color mapping (your thesis palette)
   scale_color_manual(values = c(
-    "EA" = col_EA,
-    "MA" = col_MA
+    "EA" = "black",
+    "MA" = col_PGRN
   )) +
   
   # linetype mapping (key improvement)
