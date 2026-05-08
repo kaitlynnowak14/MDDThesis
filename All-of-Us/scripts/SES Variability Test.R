@@ -18,7 +18,7 @@ master_final %>%
 ggplot(master_final, aes(x = ses_combined)) +
   geom_histogram(
     bins = 30,
-    fill = col_other,
+    fill = col_AoU,
     alpha = 0.6,
     color = "white",
     linewidth = 0.3
