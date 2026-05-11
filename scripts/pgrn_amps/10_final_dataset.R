@@ -5,19 +5,16 @@
 # Description:
 #   - Recodes demographic and SES phenotype variables
 #   - Constructs standardized SES composite variables
-#   - Generates demographics summary table
 #   - Combines EA and MA PRS datasets into final master file
 #
 # Output:
 #   master_EA_final.csv
 #   master_MA_final.csv
-#   Table1_Demographics.csv
 #   Master_Final.csv
 #
 # Notes:
 #   - SES variables are min–max scaled and equally weighted
 #   - Final dataset contains both EA and MA PRS measures
-#   - Demographics table generated from EA master dataset
 # ============================================================================
 
 # ============================================================
