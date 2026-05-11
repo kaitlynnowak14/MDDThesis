@@ -32,11 +32,13 @@ library(janitor)
 # =====================================================
 # 1. DEFINE INPUT DATASET
 # =====================================================
+
 phenos_clean <- master_final
 
 # =====================================================
 # 2. SEX DISTRIBUTION
 # =====================================================
+
 sex_table <- phenos_clean %>%
   tabyl(sex) %>%
   adorn_pct_formatting(digits = 1) # format percentages nicely
@@ -44,6 +46,7 @@ sex_table <- phenos_clean %>%
 # =====================================================
 # 3. AGE SUMMARY STATISTICS
 # =====================================================
+
 phenos_clean %>%
   summarise(
     mean_age = mean(age_at_survey, na.rm = TRUE),
@@ -55,6 +58,7 @@ phenos_clean %>%
 # =====================================================
 # 4. SOCIOECONOMIC STATUS (SES) DISTRIBUTIONS
 # =====================================================
+
 # Marital status
 marital_table <- phenos_clean %>%
   tabyl(marital_ord) %>%
@@ -73,6 +77,7 @@ employment_table <- phenos_clean %>%
 # =====================================================
 # 5. COMPOSITE SES SUMMARY
 # =====================================================
+
 phenos_clean %>%
   summarise(
     mean_SES = mean(ses_combined, ma.rm = TRUE))
