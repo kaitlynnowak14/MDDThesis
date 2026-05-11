@@ -5,35 +5,29 @@
 # Description:
 #   - Loads raw dbGaP phenotype file
 #   - Filters excluded and low-quality participants
-#   - Selecys analytic variables
-#   - Removes missing data
-#   - Exports clean phenotype dataset for downstream analyses
+#   - Reports SNP overlap counts per chromosome
+#   - Handles autosomes and chr X separately
 #
 # Output:
-#   PGRN_AMPS_Phenotypes_clean.csv
-#
-# Notes: 
-#   - Ensures harmonized and analytic cohort for PRS + phenotype models
-#   - Removes "Other" race and unknown marital status ("U")
+#   PRS-restricted VCF files (EA & MA)
+#   EA and MA PRS weights files (GRCh37 coordinates)
 # =============================================================
 
 # =====================================================
-# 1. LOAD LIBRARIES
+# 1. CREATE BED FILES FROM WEIGHTS FILES FOR BOTH EA AND MA
 # =====================================================
 
-# -----------------------------
-# 1. Create BED files from weights files for both EA and MA
-# -----------------------------
-# EA
+# ---- EA ----
 awk 'NR>1 {print $2"\t"($3-1)"\t"$3}' TopEA_SNPs_GRCh37_weights.txt > EA_weights_snps.bed
 
-# MA
+# ---- MA ----
 awk 'NR>1 {print $2"\t"($3-1)"\t"$3}' TopMA_SNPs_GRCh37_weights.txt > MA_weights_snps.bed
 
+# =====================================================
+# 2. EA SNP OVERLAP
+# =====================================================
 
-# -----------------------------
-# 2. Overlap (EA)
-# -----------------------------
+# ---- EA PRS Overlap Filtering ----
 # Autosomes
 for chr in {1..22}; do
     echo "Filtering chr${chr} to weights SNPs..."
@@ -67,11 +61,11 @@ overlap=$(bcftools view -H -R EA_weights_snps.bed \
     PGRN_AMPS_chrX_ACAN_merged.vcf.gz | wc -l)
 echo "chrX overlap with weights: $overlap SNPs"
 
+# =====================================================
+# 3. MA SNP OVERLAP
+# =====================================================
 
-# -----------------------------
-# 3. Overlap (MA)
-# -----------------------------
-# Autosomes - MA
+# Autosomes
 for chr in {1..22}; do
     echo "Filtering chr${chr} to MA weights SNPs..."
     bcftools view -R MA_weights_snps.bed \
@@ -86,7 +80,7 @@ for chr in {1..22}; do
     echo "chr${chr} overlap with MA weights: $overlap SNPs"
 done
 
-# Chr X - MA
+# Chr X
 echo "Filtering merged chrX to MA weights SNPs..."
 bcftools view -R MA_weights_snps.bed \
     PGRN_AMPS_chrX_ACAN_merged.vcf.gz \
