@@ -18,16 +18,6 @@ The project evaluates:
 
 ---
 
-## Repository Structure
-
-```text
-MDDThesis/
-├── scripts/
-│   ├── pgrn_amps/
-│   └── all_of_us/
-
----
-
 ## Datasets
 
 ### PGRN-AMPS
