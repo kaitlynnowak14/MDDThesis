@@ -5,7 +5,7 @@
 # Description:
 #   - Loads raw dbGaP phenotype file
 #   - Filters excluded and low-quality participants
-#   - Selecys analytic variables
+#   - Selects analytic variables
 #   - Removes missing data
 #   - Exports clean phenotype dataset for downstream analyses
 #
