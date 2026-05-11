@@ -336,3 +336,31 @@ for chr_ in chromosomes:
     print(f"Chromosome {chr_}: {n_rows} variants, {n_cols} samples")
 
     mt_chr.write(out)
+
+# =====================================================
+# 8. Save Final Cohort MT and Export to PLINK
+# =====================================================
+
+# Save to workspace bucket
+SNP_data_mt.write('gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/SNP_data.mt', overwrite=True)
+
+# Confirm it saved
+!gsutil ls gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/
+
+# ---- Convert Cohort Filtered Hail MT to PLINK Files ----
+SNP_data_mt = hl.read_matrix_table(
+    "gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/data/SNP_data.mt"
+)
+
+# ---- Export PLINK Files ----
+out_path = f"{bucket}/data/SNP_data_plink"
+
+hl.export_plink(
+    SNP_data_mt,
+    out_path,
+    ind_id=SNP_data_mt.s,
+    fam_id=SNP_data_mt.s
+)
+
+# Check PLINK sample count
+SNP_data_mt.count()[1]
