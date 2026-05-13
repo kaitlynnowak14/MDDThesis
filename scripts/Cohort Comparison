@@ -1,0 +1,38 @@
+# Dataset Comparison
+
+# 0. Load Libraries ####
+
+# 1. Subset AoU Dataset ####
+subset_aou <- master_final %>%
+  transmute(
+    cohort = "All_of_Us",
+    
+    sex,
+    age = age_at_survey,
+    ageonset,
+    
+    education_ord,
+    employment_ord,
+    marital_ord,
+    
+    ses_combined
+  )
+
+# 2. Load PGRN-AMPS Subset Dataset ####
+system("gsutil cp gs://fc-secure-6218f59e-a8a7-40a3-96cb-ee93a398ba0b/demographic_subset.csv .")
+
+subset_pgrn <- fread("demographic_subset.csv")
+
+# 3. Combine Datasets ####
+combined_df <- bind_rows(subset_aou, subset_pgrn)
+
+# 4. Chi-square Tests ####
+chisq.test(table(combined_df$cohort, combined_df$sex))
+chisq.test(table(combined_df$cohort, combined_df$education_ord))
+chisq.test(table(combined_df$cohort, combined_df$employment_ord))
+chisq.test(table(combined_df$cohort, combined_df$marital_ord))
+
+# 5. T-tests ####
+t.test(age ~ cohort, data = combined_df)
+t.test(ageonset ~ cohort, data = combined_df)
+t.test(ses_combined ~ cohort, data = combined_df)
