@@ -157,18 +157,18 @@ summary(model_ma_full)
 
 # ---- Likelihood Ratio Tests (LRT) ----
 # PCs vs PCs + SES
-anova(model_PCs, model_PCs_ses)
+anova(model_PCs, model_PCs_ses, test = "LRT")
 
 # PCs + SES vs PCs + SES + Sex
-anova(model_PCs_ses, model_PCs_ses_sex)
+anova(model_PCs_ses, model_PCs_ses_sex, test = "LRT")
 
 # Full EA model vs reduced model
 model_reduced_ea <- model_PCs_ses_sex
-anova(model_reduced_ea, model_ea_full)
+anova(model_reduced_ea, model_ea_full, test = "LRT")
 
 # Full MA Model vs reduced model
 model_reduced_ma <- model_PCs_ses_sex
-anova(model_reduced_ma, model_ma_full)
+anova(model_reduced_ma, model_ma_full, test = "LRT")
 
 # ---- AIC Comparison ----
 AIC(model_PCs,
